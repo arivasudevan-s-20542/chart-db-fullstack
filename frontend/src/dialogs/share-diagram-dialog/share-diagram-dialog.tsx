@@ -50,7 +50,7 @@ export interface ShareDiagramDialogProps extends BaseDialogProps {}
 export const ShareDiagramDialog: React.FC<ShareDiagramDialogProps> = ({
     dialog,
 }) => {
-    const { currentDiagram } = useChartDB();
+    const { currentDiagram, permissionLevel } = useChartDB();
     const { toast } = useToast();
     const [email, setEmail] = useState('');
     const [permission, setPermission] = useState<Permission>('EDIT');
@@ -60,6 +60,9 @@ export const ShareDiagramDialog: React.FC<ShareDiagramDialogProps> = ({
     const [copied, setCopied] = useState(false);
 
     const diagramId = currentDiagram?.id;
+
+    // Only OWNER can manage permissions
+    const canManagePermissions = permissionLevel === 'OWNER';
 
     // Load collaborators when dialog opens
     useEffect(() => {
@@ -225,51 +228,59 @@ export const ShareDiagramDialog: React.FC<ShareDiagramDialogProps> = ({
                 </DialogHeader>
 
                 <div className="space-y-4">
-                    {/* Share by email */}
-                    <div className="space-y-2">
-                        <Label>Invite by email</Label>
-                        <div className="flex gap-2">
-                            <Input
-                                type="email"
-                                placeholder="Enter email address"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        handleShare();
+                    {/* Share by email - only for owners */}
+                    {canManagePermissions && (
+                        <div className="space-y-2">
+                            <Label>Invite by email</Label>
+                            <div className="flex gap-2">
+                                <Input
+                                    type="email"
+                                    placeholder="Enter email address"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            handleShare();
+                                        }
+                                    }}
+                                    className="flex-1"
+                                />
+                                <Select
+                                    value={permission}
+                                    onValueChange={(v) =>
+                                        setPermission(v as Permission)
                                     }
-                                }}
-                                className="flex-1"
-                            />
-                            <Select
-                                value={permission}
-                                onValueChange={(v) =>
-                                    setPermission(v as Permission)
-                                }
+                                >
+                                    <SelectTrigger className="w-28">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="VIEW">
+                                            View
+                                        </SelectItem>
+                                        <SelectItem value="EDIT">
+                                            Edit
+                                        </SelectItem>
+                                        <SelectItem value="ADMIN">
+                                            Admin
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <Button
+                                onClick={handleShare}
+                                disabled={!email.trim() || isSharing}
+                                className="w-full"
                             >
-                                <SelectTrigger className="w-28">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="VIEW">View</SelectItem>
-                                    <SelectItem value="EDIT">Edit</SelectItem>
-                                    <SelectItem value="ADMIN">Admin</SelectItem>
-                                </SelectContent>
-                            </Select>
+                                {isSharing ? (
+                                    <Loader2 className="mr-2 size-4 animate-spin" />
+                                ) : (
+                                    <UserPlus className="mr-2 size-4" />
+                                )}
+                                Share
+                            </Button>
                         </div>
-                        <Button
-                            onClick={handleShare}
-                            disabled={!email.trim() || isSharing}
-                            className="w-full"
-                        >
-                            {isSharing ? (
-                                <Loader2 className="mr-2 size-4 animate-spin" />
-                            ) : (
-                                <UserPlus className="mr-2 size-4" />
-                            )}
-                            Share
-                        </Button>
-                    </div>
+                    )}
 
                     {/* Copy link */}
                     <div className="flex items-center gap-2 rounded-md border p-2">
@@ -339,7 +350,7 @@ export const ShareDiagramDialog: React.FC<ShareDiagramDialogProps> = ({
                                                     <Crown className="size-3" />
                                                     Owner
                                                 </Badge>
-                                            ) : (
+                                            ) : canManagePermissions ? (
                                                 <>
                                                     <Select
                                                         value={
@@ -381,6 +392,12 @@ export const ShareDiagramDialog: React.FC<ShareDiagramDialogProps> = ({
                                                         <Trash2 className="size-4" />
                                                     </Button>
                                                 </>
+                                            ) : (
+                                                <Badge variant="outline">
+                                                    {getPermissionLabel(
+                                                        collab.permission
+                                                    )}
+                                                </Badge>
                                             )}
                                         </div>
                                     </div>

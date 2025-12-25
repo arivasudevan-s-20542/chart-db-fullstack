@@ -2148,6 +2148,7 @@ export const ChartDBProvider: React.FC<
                 schemas,
                 events,
                 readonly,
+                permissionLevel,
                 updateDiagramData,
                 updateDiagramId,
                 updateDiagramName,

@@ -168,6 +168,7 @@ export interface ChartDBContext {
     currentDiagram: Diagram;
     events: EventEmitter<ChartDBEvent>;
     readonly?: boolean;
+    permissionLevel?: 'OWNER' | 'EDITOR' | 'COMMENTER' | 'VIEWER';
 
     highlightedCustomType?: DBCustomType;
     highlightCustomTypeId: (id?: string) => void;

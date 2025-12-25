@@ -12,6 +12,7 @@ import { Button } from '@/components/button/button';
 import { Share2 } from 'lucide-react';
 import { useDialog } from '@/hooks/use-dialog';
 import { useAuth } from '@/context/auth-context';
+import { useChartDB } from '@/hooks/use-chartdb';
 import {
     Tooltip,
     TooltipTrigger,
@@ -24,6 +25,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = () => {
     const { effectiveTheme } = useTheme();
     const { openShareDiagramDialog } = useDialog();
     const { isAuthenticated } = useAuth();
+    const { permissionLevel } = useChartDB();
+
+    // Only OWNER can share diagrams
+    const canShare = permissionLevel === 'OWNER';
 
     const renderStars = useCallback(() => {
         return (
@@ -61,7 +66,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = () => {
             <DiagramName />
             <div className="hidden flex-1 items-center justify-end gap-2 sm:flex">
                 <CollaborationIndicator />
-                {isAuthenticated && (
+                {isAuthenticated && canShare && (
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
