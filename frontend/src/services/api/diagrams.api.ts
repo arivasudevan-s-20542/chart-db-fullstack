@@ -38,6 +38,7 @@ export interface DiagramDTO {
     updatedAt: string;
     ownerId: string;
     ownerEmail?: string;
+    permissionLevel?: string; // User's permission: OWNER, EDITOR, COMMENTER, VIEWER
 }
 
 export interface CreateDiagramRequest {
@@ -81,6 +82,12 @@ const toDiagram = (dto: DiagramDTO): Diagram => ({
     areas: [],
     customTypes: [],
     notes: [],
+    permissionLevel: dto.permissionLevel as
+        | 'OWNER'
+        | 'EDITOR'
+        | 'COMMENTER'
+        | 'VIEWER'
+        | undefined,
 });
 
 export const diagramsApi = {
@@ -598,23 +605,27 @@ const mapPermissionLevel = (level: string): 'VIEW' | 'EDIT' | 'ADMIN' => {
 // ===================
 
 // Map frontend table to backend format
-const mapTableToBackend = (table: any) => ({
-    id: table.id,
-    name: table.name,
-    schema: table.schema,
-    positionX: table.x,
-    positionY: table.y,
-    color: table.color,
-    isView: table.isView,
-    isMaterializedView: table.isMaterializedView,
-    width: table.width,
-    comment: table.comments,
-    isCollapsed: table.expanded === false,
-    sortOrder: table.order,
-    columns: table.fields?.map(mapColumnToBackend) || [],
-    // Send indexes as JSON string for backend storage
-    indexes: table.indexes ? JSON.stringify(table.indexes) : null,
-});
+const mapTableToBackend = (table: any) => {
+    // Support both 'fields' (frontend) and 'columns' (when passed from backend-storage-provider)
+    const fieldsOrColumns = table.fields || table.columns || [];
+    return {
+        id: table.id,
+        name: table.name,
+        schema: table.schema,
+        positionX: table.x ?? table.positionX,
+        positionY: table.y ?? table.positionY,
+        color: table.color,
+        isView: table.isView,
+        isMaterializedView: table.isMaterializedView,
+        width: table.width,
+        comment: table.comments ?? table.comment,
+        isCollapsed: table.expanded === false || table.isCollapsed,
+        sortOrder: table.order ?? table.sortOrder,
+        columns: fieldsOrColumns.map(mapColumnToBackend),
+        // Send indexes as JSON string for backend storage
+        indexes: table.indexes ? JSON.stringify(table.indexes) : null,
+    };
+};
 
 // Helper to parse indexes from backend
 const parseIndexes = (indexesJson: string | null | undefined): any[] => {
@@ -646,22 +657,27 @@ const mapTableFromBackend = (dto: any) => ({
 });
 
 // Map frontend column/field to backend format
+// Handles both frontend field format and backend-storage-provider format
 const mapColumnToBackend = (field: any) => ({
     id: field.id,
     name: field.name,
-    dataType: typeof field.type === 'object' ? field.type.id : field.type,
-    isPrimaryKey: field.primaryKey,
-    isUnique: field.unique,
-    isNullable: field.nullable,
-    isAutoIncrement: field.increment,
-    isArray: field.isArray,
-    maxLength: field.characterMaximumLength,
+    // Handle multiple possible type formats
+    dataType:
+        typeof field.type === 'object'
+            ? field.type.id || field.type.name
+            : field.type || field.dataType,
+    isPrimaryKey: field.primaryKey ?? field.isPrimaryKey ?? false,
+    isUnique: field.unique ?? field.isUnique ?? false,
+    isNullable: field.nullable ?? field.isNullable ?? true,
+    isAutoIncrement: field.increment ?? field.isAutoIncrement ?? false,
+    isArray: field.isArray ?? false,
+    maxLength: field.characterMaximumLength ?? field.maxLength,
     precision: field.precision,
     scale: field.scale,
-    defaultValue: field.default,
+    defaultValue: field.default ?? field.defaultValue,
     collation: field.collation,
-    comment: field.comments,
-    orderIndex: field.order,
+    comment: field.comments ?? field.comment,
+    orderIndex: field.order ?? field.orderIndex ?? 0,
 });
 
 // Map backend column to frontend field format

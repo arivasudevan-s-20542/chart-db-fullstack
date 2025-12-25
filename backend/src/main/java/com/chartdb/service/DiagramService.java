@@ -82,7 +82,17 @@ public class DiagramService {
         
         diagramRepository.updateLastAccessed(diagramId, Instant.now());
         
-        return diagramMapper.toResponse(diagram);
+        DiagramResponse response = diagramMapper.toResponse(diagram);
+        
+        // Set user's permission level - owner always has OWNER level
+        if (isOwner(diagram, userId)) {
+            response.setPermissionLevel("OWNER");
+        } else {
+            PermissionLevel permissionLevel = permissionService.getPermissionLevel(diagramId, userId);
+            response.setPermissionLevel(permissionLevel != null ? permissionLevel.name() : "VIEWER");
+        }
+        
+        return response;
     }
     
     /**
@@ -197,8 +207,15 @@ public class DiagramService {
     }
     
     public Diagram findDiagramById(String diagramId) {
-        return diagramRepository.findById(diagramId)
+        Diagram diagram = diagramRepository.findById(diagramId)
             .orElseThrow(() -> new ResourceNotFoundException("Diagram", "id", diagramId));
+        
+        // Don't return archived diagrams
+        if (diagram.getStatus() == DiagramStatus.ARCHIVED) {
+            throw new ResourceNotFoundException("Diagram", "id", diagramId);
+        }
+        
+        return diagram;
     }
     
     public boolean canUserView(Diagram diagram, String userId) {

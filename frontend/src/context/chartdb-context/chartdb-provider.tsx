@@ -70,6 +70,9 @@ export const ChartDBProvider: React.FC<
         diagram?.customTypes ?? []
     );
     const [notes, setNotes] = useState<Note[]>(diagram?.notes ?? []);
+    const [permissionLevel, setPermissionLevel] = useState<
+        'OWNER' | 'EDITOR' | 'COMMENTER' | 'VIEWER' | undefined
+    >(diagram?.permissionLevel);
 
     const { events: diffEvents } = useDiff();
 
@@ -101,10 +104,17 @@ export const ChartDBProvider: React.FC<
         [databaseType]
     );
 
-    const readonly = useMemo(
-        () => readonlyProp ?? hasDiff ?? false,
-        [readonlyProp, hasDiff]
-    );
+    const readonly = useMemo(() => {
+        // If explicitly set via prop, use that
+        if (readonlyProp !== undefined) return readonlyProp;
+        // If user has VIEWER or COMMENTER permission, they can only view
+        if (permissionLevel === 'VIEWER' || permissionLevel === 'COMMENTER') {
+            return true;
+        }
+        // If in diff mode, readonly
+        if (hasDiff) return true;
+        return false;
+    }, [readonlyProp, permissionLevel, hasDiff]);
 
     const schemas = useMemo(
         () =>
@@ -1915,10 +1925,12 @@ export const ChartDBProvider: React.FC<
                 setDiagramUpdatedAt(diagram.updatedAt);
                 setHighlightedCustomTypeId(undefined);
                 setNotes(diagram.notes ?? []);
+                setPermissionLevel(diagram.permissionLevel);
                 console.log(
                     '[ChartDBProvider] diagram loaded with',
                     (diagram.tables ?? []).length,
-                    'tables'
+                    'tables, permissionLevel:',
+                    diagram.permissionLevel
                 );
 
                 events.emit({ action: 'load_diagram', data: { diagram } });
@@ -1941,6 +1953,7 @@ export const ChartDBProvider: React.FC<
                 setHighlightedCustomTypeId,
                 events,
                 setNotes,
+                setPermissionLevel,
                 resetRedoStack,
                 resetUndoStack,
             ]

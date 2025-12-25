@@ -6,7 +6,6 @@ import com.chartdb.security.JwtAuthenticationFilter;
 import com.chartdb.security.oauth2.CustomOAuth2UserService;
 import com.chartdb.security.oauth2.OAuth2AuthenticationFailureHandler;
 import com.chartdb.security.oauth2.OAuth2AuthenticationSuccessHandler;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

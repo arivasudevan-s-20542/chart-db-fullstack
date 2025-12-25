@@ -26,6 +26,7 @@ export interface Diagram {
     notes?: Note[];
     createdAt: Date;
     updatedAt: Date;
+    permissionLevel?: 'OWNER' | 'EDITOR' | 'COMMENTER' | 'VIEWER';
 }
 
 export const diagramSchema: z.ZodType<Diagram> = z.object({

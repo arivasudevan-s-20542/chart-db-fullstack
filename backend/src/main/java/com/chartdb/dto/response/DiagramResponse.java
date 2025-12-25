@@ -53,4 +53,7 @@ public class DiagramResponse {
     private Instant archivedAt;
     private Instant createdAt;
     private Instant updatedAt;
+    
+    // User's permission level for this diagram
+    private String permissionLevel;
 }
