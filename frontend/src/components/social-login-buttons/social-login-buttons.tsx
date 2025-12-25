@@ -48,10 +48,11 @@ export const SocialLoginButtons: React.FC<SocialLoginButtonsProps> = ({
         const fetchProviders = async () => {
             try {
                 const apiUrl = getApiUrl();
-                console.log('[OAuth2] Fetching providers from:', `${apiUrl}/auth/oauth2/providers`);
-                const response = await fetch(
+                console.log(
+                    '[OAuth2] Fetching providers from:',
                     `${apiUrl}/auth/oauth2/providers`
                 );
+                const response = await fetch(`${apiUrl}/auth/oauth2/providers`);
                 console.log('[OAuth2] Response status:', response.status);
                 if (response.ok) {
                     const data = await response.json();

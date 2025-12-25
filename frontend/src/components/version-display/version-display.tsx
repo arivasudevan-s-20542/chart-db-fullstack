@@ -1,5 +1,9 @@
 import React from 'react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/tooltip/tooltip';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/tooltip/tooltip';
 
 // Build-time version info injected by Vite
 const BUILD_VERSION = import.meta.env.VITE_BUILD_VERSION || 'dev';

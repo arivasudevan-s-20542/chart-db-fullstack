@@ -100,16 +100,6 @@ public class OAuth2Config {
     }
 
     /**
-     * Check if OAuth2 authentication is enabled (at least one provider configured).
-     */
-    public boolean isOAuth2Enabled() {
-        if (registrations == null) {
-            init();
-        }
-        return oauth2Enabled;
-    }
-
-    /**
      * Get available OAuth2 providers.
      */
     public Map<String, Boolean> getAvailableProviders() {
