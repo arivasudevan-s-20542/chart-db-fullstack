@@ -12,11 +12,29 @@ interface OAuth2Providers {
     zoho: boolean;
 }
 
-// Backend OAuth2 endpoints
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+// Get the base URL (without /api suffix for OAuth2 redirects)
+const getBaseUrl = () => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+    // If it's a relative URL like '/api', use current origin
+    if (apiUrl.startsWith('/')) {
+        return window.location.origin;
+    }
+    // Remove /api suffix if present
+    return apiUrl.replace(/\/api\/?$/, '');
+};
+
+// API URL for fetching providers
+const getApiUrl = () => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+    // If it's a relative URL, use current origin
+    if (apiUrl.startsWith('/')) {
+        return window.location.origin + apiUrl;
+    }
+    return apiUrl;
+};
 
 const getOAuth2Url = (provider: string) => {
-    return `${API_URL}/oauth2/authorize/${provider}`;
+    return `${getBaseUrl()}/oauth2/authorize/${provider}`;
 };
 
 export const SocialLoginButtons: React.FC<SocialLoginButtonsProps> = ({
@@ -29,11 +47,15 @@ export const SocialLoginButtons: React.FC<SocialLoginButtonsProps> = ({
     useEffect(() => {
         const fetchProviders = async () => {
             try {
+                const apiUrl = getApiUrl();
+                console.log('[OAuth2] Fetching providers from:', `${apiUrl}/auth/oauth2/providers`);
                 const response = await fetch(
-                    `${API_URL}/api/auth/oauth2/providers`
+                    `${apiUrl}/auth/oauth2/providers`
                 );
+                console.log('[OAuth2] Response status:', response.status);
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('[OAuth2] Providers data:', data);
                     setProviders(data.data);
                 }
             } catch (error) {

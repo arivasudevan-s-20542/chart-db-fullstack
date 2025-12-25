@@ -6,6 +6,7 @@ import { HelmetData } from './helmet/helmet-data';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './context/auth-context';
 import { CollaborationProvider } from './context/collaboration-context';
+import { VersionDisplay } from './components/version-display';
 
 export const App = () => {
     return (
@@ -15,6 +16,7 @@ export const App = () => {
                 <CollaborationProvider>
                     <TooltipProvider>
                         <RouterProvider router={router} />
+                        <VersionDisplay />
                     </TooltipProvider>
                 </CollaborationProvider>
             </AuthProvider>

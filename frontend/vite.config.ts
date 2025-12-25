@@ -3,9 +3,36 @@ import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
 import path from 'path';
 import UnpluginInjectPreload from 'unplugin-inject-preload/vite';
+import { execSync } from 'child_process';
+
+// Get git commit hash for versioning
+const getGitCommit = () => {
+    try {
+        return execSync('git rev-parse HEAD').toString().trim();
+    } catch {
+        return 'unknown';
+    }
+};
+
+const getGitCommitShort = () => {
+    try {
+        return execSync('git rev-parse --short HEAD').toString().trim();
+    } catch {
+        return 'unknown';
+    }
+};
 
 // https://vitejs.dev/config/
 export default defineConfig({
+    define: {
+        'import.meta.env.VITE_BUILD_VERSION': JSON.stringify(
+            process.env.npm_package_version || '1.0.0'
+        ),
+        'import.meta.env.VITE_BUILD_COMMIT': JSON.stringify(getGitCommit()),
+        'import.meta.env.VITE_BUILD_TIME': JSON.stringify(
+            new Date().toISOString()
+        ),
+    },
     plugins: [
         react(),
         visualizer({

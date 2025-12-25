@@ -81,6 +81,9 @@ jobs:
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL || '/api' }}
           VITE_WS_URL: ${{ vars.VITE_WS_URL || '/ws' }}
+          VITE_BUILD_VERSION: ${{ github.run_number }}
+          VITE_BUILD_COMMIT: ${{ github.sha }}
+          VITE_BUILD_TIME: ${{ github.event.head_commit.timestamp }}
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -155,6 +158,9 @@ jobs:
           build-args: |
             VITE_API_URL=${{ vars.VITE_API_URL }}
             VITE_WS_URL=${{ vars.VITE_WS_URL }}
+            VITE_BUILD_VERSION=${{ github.run_number }}
+            VITE_BUILD_COMMIT=${{ github.sha }}
+            VITE_BUILD_TIME=${{ github.event.head_commit.timestamp }}
 
   # ==========================================
   # Deploy to Server
