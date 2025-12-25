@@ -1,0 +1,55 @@
+# Production environment configuration
+spring:
+  # PostgreSQL Production Database
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 10
+      idle-timeout: 300000
+      connection-timeout: 20000
+      max-lifetime: 1200000
+  
+  # JPA Production Settings
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Never auto-update in production
+    show-sql: false
+    properties:
+      hibernate:
+        generate_statistics: false
+  
+  # Redis Production
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: 2000
+
+# Production JWT (from environment)
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration: ${JWT_ACCESS_EXPIRATION:900000}
+  refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+# Production CORS
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:https://chartdb.io}
+
+# Production Logging
+logging:
+  level:
+    root: WARN
+    com.chartdb: INFO
+    org.springframework.web: WARN
+    org.springframework.security: WARN
+
+# Production Server
+server:
+  tomcat:
+    max-threads: 200
+    accept-count: 100
