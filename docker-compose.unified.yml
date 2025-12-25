@@ -1,0 +1,68 @@
+# Unified Docker Compose - Backend serves Frontend
+# Single container deployment
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: chartdb-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-chartdb}
+      POSTGRES_USER: ${POSTGRES_USER:-chartdb}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Database password required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-chartdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - chartdb-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: chartdb-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - chartdb-network
+
+  # Unified application - Backend serves Frontend
+  app:
+    image: ghcr.io/arivasudevan-s-20542/chart-db-fullstack/unified:latest
+    container_name: chartdb-app
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-chartdb}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-chartdb}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
+      JWT_SECRET: ${JWT_SECRET:?JWT secret required}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-*}
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - chartdb-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  chartdb-network:
+    driver: bridge

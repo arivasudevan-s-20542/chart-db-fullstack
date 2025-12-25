@@ -66,15 +66,23 @@ public class SecurityConfig {
             .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
+                // Static resources (frontend)
+                .requestMatchers("/", "/index.html", "/favicon.ico").permitAll()
+                .requestMatchers("/assets/**", "/static/**", "/*.js", "/*.css", "/*.png", "/*.svg", "/*.ico").permitAll()
+                // SPA routes - allow all frontend routes
+                .requestMatchers("/login", "/register", "/diagrams", "/diagrams/**", "/editor", "/editor/**").permitAll()
+                .requestMatchers("/settings", "/settings/**", "/profile", "/profile/**").permitAll()
+                // Public API endpoints
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/ws/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 // Swagger/OpenAPI
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                // All other endpoints require authentication
-                .anyRequest().authenticated()
+                // All other API endpoints require authentication
+                .requestMatchers("/api/**").authenticated()
+                // Allow everything else (static files)
+                .anyRequest().permitAll()
             );
         
         http.authenticationProvider(authenticationProvider());
