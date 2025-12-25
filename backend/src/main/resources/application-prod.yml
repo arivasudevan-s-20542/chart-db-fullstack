@@ -2,9 +2,9 @@
 spring:
   # PostgreSQL Production Database
   datasource:
-    url: ${DATABASE_URL}
-    username: ${DATABASE_USERNAME}
-    password: ${DATABASE_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL:${DATABASE_URL}}
+    username: ${SPRING_DATASOURCE_USERNAME:${DATABASE_USERNAME}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DATABASE_PASSWORD}}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 20
@@ -16,7 +16,7 @@ spring:
   # JPA Production Settings
   jpa:
     hibernate:
-      ddl-auto: validate  # Never auto-update in production
+      ddl-auto: update  # Auto-create/update schema
     show-sql: false
     properties:
       hibernate:
@@ -25,8 +25,8 @@ spring:
   # Redis Production
   data:
     redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT:6379}
+      host: ${SPRING_DATA_REDIS_HOST:${REDIS_HOST:redis}}
+      port: ${SPRING_DATA_REDIS_PORT:${REDIS_PORT:6379}}
       password: ${REDIS_PASSWORD:}
       timeout: 2000
 
