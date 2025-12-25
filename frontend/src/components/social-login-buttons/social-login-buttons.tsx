@@ -29,7 +29,9 @@ export const SocialLoginButtons: React.FC<SocialLoginButtonsProps> = ({
     useEffect(() => {
         const fetchProviders = async () => {
             try {
-                const response = await fetch(`${API_URL}/api/auth/oauth2/providers`);
+                const response = await fetch(
+                    `${API_URL}/api/auth/oauth2/providers`
+                );
                 if (response.ok) {
                     const data = await response.json();
                     setProviders(data.data);
@@ -54,7 +56,8 @@ export const SocialLoginButtons: React.FC<SocialLoginButtonsProps> = ({
         return null;
     }
 
-    const hasAnyProvider = providers && (providers.google || providers.github || providers.zoho);
+    const hasAnyProvider =
+        providers && (providers.google || providers.github || providers.zoho);
     if (!hasAnyProvider) {
         return null;
     }
@@ -101,7 +104,11 @@ export const SocialLoginButtons: React.FC<SocialLoginButtonsProps> = ({
                     disabled={disabled}
                     onClick={() => handleOAuth2Login('github')}
                 >
-                    <svg className="mr-2 size-5" viewBox="0 0 24 24" fill="currentColor">
+                    <svg
+                        className="mr-2 size-5"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                    >
                         <path
                             fillRule="evenodd"
                             clipRule="evenodd"
@@ -126,10 +133,7 @@ export const SocialLoginButtons: React.FC<SocialLoginButtonsProps> = ({
                             fill="#C8202B"
                             d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
                         />
-                        <path
-                            fill="#F0AB00"
-                            d="M12 2L2 7l10 5 10-5-10-5z"
-                        />
+                        <path fill="#F0AB00" d="M12 2L2 7l10 5 10-5-10-5z" />
                         <path
                             fill="#009688"
                             d="M2 17l10 5 10-5"

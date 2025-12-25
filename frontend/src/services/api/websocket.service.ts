@@ -186,19 +186,16 @@ class WebSocketService {
     private subscribeToPong(): void {
         if (!this.client?.connected) return;
 
-        const pongSub = this.client.subscribe(
-            '/user/queue/pong',
-            (message) => {
-                try {
-                    const data = JSON.parse(message.body);
-                    if (data.pingId) {
-                        this.handlePong(data.pingId);
-                    }
-                } catch {
-                    // Ignore parse errors
+        const pongSub = this.client.subscribe('/user/queue/pong', (message) => {
+            try {
+                const data = JSON.parse(message.body);
+                if (data.pingId) {
+                    this.handlePong(data.pingId);
                 }
+            } catch {
+                // Ignore parse errors
             }
-        );
+        });
         this.subscriptions.set('pong', pongSub);
     }
 

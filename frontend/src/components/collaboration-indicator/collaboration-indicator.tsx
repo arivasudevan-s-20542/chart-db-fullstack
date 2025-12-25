@@ -27,8 +27,13 @@ const getLatencyColor = (latency: number) => {
 };
 
 export const CollaborationIndicator: React.FC = () => {
-    const { isConnected, isConnecting, activeUsers, currentDiagramId, latency } =
-        useCollaboration();
+    const {
+        isConnected,
+        isConnecting,
+        activeUsers,
+        currentDiagramId,
+        latency,
+    } = useCollaboration();
 
     // Don't show if not in a diagram session
     if (!currentDiagramId) {
@@ -63,7 +68,9 @@ export const CollaborationIndicator: React.FC = () => {
             {isConnected && latency >= 0 && (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <div className={`flex items-center gap-1 ${getLatencyColor(latency)}`}>
+                        <div
+                            className={`flex items-center gap-1 ${getLatencyColor(latency)}`}
+                        >
                             <Activity className="size-3" />
                             <span className="text-xs font-medium tabular-nums">
                                 {latency}ms

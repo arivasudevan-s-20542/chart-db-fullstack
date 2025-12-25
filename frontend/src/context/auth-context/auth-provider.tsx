@@ -150,35 +150,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     /**
      * Set auth tokens directly (used for OAuth2 callback)
      */
-    const setAuthTokens = useCallback(async (accessToken: string, refreshToken: string) => {
-        setIsLoading(true);
-        setError(null);
-        try {
-            // Store tokens
-            setTokens(accessToken, refreshToken);
-            
-            // Fetch user profile
-            const userProfile = await authApi.getCurrentUser();
-            setUser(userProfile);
-            setIsAuthenticated(true);
-
-            // Connect to WebSocket
+    const setAuthTokens = useCallback(
+        async (accessToken: string, refreshToken: string) => {
+            setIsLoading(true);
+            setError(null);
             try {
-                await wsService.connect();
-            } catch (wsError) {
-                console.warn('WebSocket connection failed:', wsError);
+                // Store tokens
+                setTokens(accessToken, refreshToken);
+
+                // Fetch user profile
+                const userProfile = await authApi.getCurrentUser();
+                setUser(userProfile);
+                setIsAuthenticated(true);
+
+                // Connect to WebSocket
+                try {
+                    await wsService.connect();
+                } catch (wsError) {
+                    console.warn('WebSocket connection failed:', wsError);
+                }
+            } catch (err: any) {
+                clearTokens();
+                setUser(null);
+                setIsAuthenticated(false);
+                const message =
+                    err.response?.data?.message ||
+                    err.message ||
+                    'Authentication failed';
+                setError(message);
+                throw new Error(message);
+            } finally {
+                setIsLoading(false);
             }
-        } catch (err: any) {
-            clearTokens();
-            setUser(null);
-            setIsAuthenticated(false);
-            const message = err.response?.data?.message || err.message || 'Authentication failed';
-            setError(message);
-            throw new Error(message);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
+        },
+        []
+    );
 
     const value: AuthContextValue = {
         user,
