@@ -37,7 +37,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 "http://127.0.0.1:*", 
                 "http://192.168.*.*:*",
                 "http://62.84.186.161:*",
-                "https://62.84.186.161:*"
+                "https://62.84.186.161:*",
+                "https://chartdb.in",
+                "https://www.chartdb.in",
+                "https://*.chartdb.in"
             )
             .withSockJS();
     }
