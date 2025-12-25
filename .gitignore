@@ -55,3 +55,9 @@ backend/target/
 
 # Docker (don't ignore Dockerfiles)
 docker-compose.override.yml
+
+# Frontend build in backend static (keep placeholder)
+backend/src/main/resources/static/assets/
+backend/src/main/resources/static/*.js
+backend/src/main/resources/static/*.css
+!backend/src/main/resources/static/index.html
