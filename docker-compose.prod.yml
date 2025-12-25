@@ -35,7 +35,7 @@ services:
       - chartdb-network
 
   backend:
-    image: ghcr.io/${GITHUB_REPOSITORY}/backend:latest
+    image: ghcr.io/arivasudevan-s-20542/chart-db-fullstack/backend:latest
     container_name: chartdb-backend
     restart: unless-stopped
     environment:
@@ -58,7 +58,7 @@ services:
       - chartdb-network
 
   frontend:
-    image: ghcr.io/${GITHUB_REPOSITORY}/frontend:latest
+    image: ghcr.io/arivasudevan-s-20542/chart-db-fullstack/frontend:latest
     container_name: chartdb-frontend
     restart: unless-stopped
     ports:
