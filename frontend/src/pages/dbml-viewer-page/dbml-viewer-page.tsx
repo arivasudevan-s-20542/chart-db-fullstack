@@ -50,10 +50,10 @@ export const DBMLViewerPage: React.FC = () => {
                         size="icon"
                         onClick={handleBackToEditor}
                     >
-                        <ArrowLeft className="h-5 w-5" />
+                        <ArrowLeft className="size-5" />
                     </Button>
                     <div className="flex items-center gap-2">
-                        <FileText className="h-6 w-6 text-primary" />
+                        <FileText className="size-6 text-primary" />
                         <h1 className="text-2xl font-bold">DBML Viewer</h1>
                     </div>
                 </div>
@@ -61,7 +61,7 @@ export const DBMLViewerPage: React.FC = () => {
                     <label htmlFor="dbml-file-upload">
                         <Button variant="outline" asChild>
                             <span className="cursor-pointer">
-                                <Upload className="mr-2 h-4 w-4" />
+                                <Upload className="mr-2 size-4" />
                                 Upload DBML File
                             </span>
                         </Button>
@@ -123,7 +123,7 @@ Table posts {
                     {dbmlContent ? (
                         <div className="flex-1 overflow-hidden rounded-lg border">
                             <CodeSnippet
-                                className="h-full w-full"
+                                className="size-full"
                                 code={dbmlContent}
                                 autoScroll={false}
                                 isComplete={true}
@@ -132,7 +132,7 @@ Table posts {
                     ) : (
                         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed">
                             <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                                <FileText className="h-12 w-12" />
+                                <FileText className="size-12" />
                                 <p className="text-sm">
                                     Upload a DBML file or paste content to view
                                 </p>

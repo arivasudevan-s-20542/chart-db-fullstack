@@ -1,1 +1,4 @@
-export { CollaborationIndicator, default as default } from './collaboration-indicator';
+export {
+    CollaborationIndicator,
+    default as default,
+} from './collaboration-indicator';

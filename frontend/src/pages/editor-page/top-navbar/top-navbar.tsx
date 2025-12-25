@@ -12,7 +12,11 @@ import { Button } from '@/components/button/button';
 import { Share2 } from 'lucide-react';
 import { useDialog } from '@/hooks/use-dialog';
 import { useAuth } from '@/context/auth-context';
-import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/tooltip/tooltip';
+import {
+    Tooltip,
+    TooltipTrigger,
+    TooltipContent,
+} from '@/components/tooltip/tooltip';
 
 export interface TopNavbarProps {}
 

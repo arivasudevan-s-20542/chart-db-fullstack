@@ -34,7 +34,12 @@ export const UserMenu: React.FC = () => {
     if (!isAuthenticated) {
         return (
             <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={handleLogin} disabled={isLoading}>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleLogin}
+                    disabled={isLoading}
+                >
                     <LogIn className="mr-2 size-4" />
                     Sign In
                 </Button>
@@ -48,7 +53,8 @@ export const UserMenu: React.FC = () => {
 
     // Get user initials for avatar
     const initials = user
-        ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || user.email[0].toUpperCase()
+        ? `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() ||
+          user.email[0].toUpperCase()
         : '?';
 
     const displayName = user
@@ -58,7 +64,10 @@ export const UserMenu: React.FC = () => {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative size-8 rounded-full">
+                <Button
+                    variant="ghost"
+                    className="relative size-8 rounded-full"
+                >
                     <Avatar className="size-8">
                         <AvatarFallback className="bg-primary text-primary-foreground">
                             {initials}
@@ -69,7 +78,9 @@ export const UserMenu: React.FC = () => {
             <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{displayName}</p>
+                        <p className="text-sm font-medium leading-none">
+                            {displayName}
+                        </p>
                         <p className="text-xs leading-none text-muted-foreground">
                             {user?.email}
                         </p>
@@ -85,7 +96,10 @@ export const UserMenu: React.FC = () => {
                     <span>Settings</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="text-destructive"
+                >
                     <LogOut className="mr-2 size-4" />
                     <span>Log out</span>
                 </DropdownMenuItem>

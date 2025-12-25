@@ -1,8 +1,6 @@
 import type { Diagram } from '@/lib/domain/diagram';
 import type { DBTable } from '@/lib/domain/db-table';
 import type { DBField } from '@/lib/domain/db-field';
-import type { DBRelationship } from '@/lib/domain/db-relationship';
-import type { DBIndex } from '@/lib/domain/db-index';
 
 /**
  * Exports diagram schema as custom XML Data Dictionary
@@ -10,10 +8,8 @@ import type { DBIndex } from '@/lib/domain/db-index';
  */
 export function exportDataDictionary({
     diagram,
-    databaseType,
 }: {
     diagram: Diagram;
-    databaseType?: string;
 }): string {
     const { tables = [], relationships = [] } = diagram;
 
@@ -27,7 +23,9 @@ export function exportDataDictionary({
 -->`;
 
     // Generate XML for all tables
-    const tablesXml = tables.map((table) => generateTableXML(table, diagram)).join('\n\n');
+    const tablesXml = tables
+        .map((table) => generateTableXML(table, diagram))
+        .join('\n\n');
 
     return `<?xml version="1.0" encoding="UTF-8"?>
 ${header}
@@ -39,20 +37,22 @@ ${tablesXml}`;
  * Generate XML for a single table with all columns, keys, indexes, and foreign keys
  */
 function generateTableXML(table: DBTable, diagram: Diagram): string {
-    const { fields = [], indexes = [] } = table;
-    
+    const { fields = [] } = table;
+
     // Table description
-    const description = table.comment || table.name;
-    
+    const description = table.comments || table.name;
+
     // Generate columns XML
-    const columnsXml = fields.map((field) => generateColumnXML(field)).join('\n');
-    
+    const columnsXml = fields
+        .map((field) => generateColumnXML(field))
+        .join('\n');
+
     // Primary key
     const primaryKeyXml = generatePrimaryKeyXML(table);
-    
+
     // Foreign keys
     const foreignKeysXml = generateForeignKeysXML(table, diagram);
-    
+
     // Indexes
     const indexesXml = generateIndexesXML(table);
 
@@ -73,12 +73,11 @@ ${columnsXml}
 function generateColumnXML(field: DBField): string {
     const nullable = field.nullable ?? true;
     const hasDefault = field.default !== undefined && field.default !== null;
-    const isUnique = field.unique ?? false;
     const isPrimaryKey = field.primaryKey ?? false;
-    
+
     // Determine data type with size
-    const dataType = field.type.dataType || 'VARCHAR';
-    const maxSize = field.type.characterMaximumLength;
+    const dataType = field.type.name || 'VARCHAR';
+    const maxSize = field.characterMaximumLength;
 
     let columnXml = `            <column name="${escapeXml(field.name)}">
                 <data-type>${escapeXml(dataType)}</data-type>`;
@@ -104,8 +103,8 @@ function generateColumnXML(field: DBField): string {
     }
 
     // Add comment if available
-    if (field.comment) {
-        columnXml += `\n                <comment>${escapeXml(field.comment)}</comment>`;
+    if (field.comments) {
+        columnXml += `\n                <comment>${escapeXml(field.comments)}</comment>`;
     }
 
     columnXml += `\n            </column>`;
@@ -118,14 +117,17 @@ function generateColumnXML(field: DBField): string {
  */
 function generatePrimaryKeyXML(table: DBTable): string {
     const primaryKeyFields = table.fields?.filter((f) => f.primaryKey) || [];
-    
+
     if (primaryKeyFields.length === 0) {
         return '';
     }
 
     const pkName = `pk_${table.name}`;
     const pkColumns = primaryKeyFields
-        .map((f) => `            <primary-key-column>${escapeXml(f.name)}</primary-key-column>`)
+        .map(
+            (f) =>
+                `            <primary-key-column>${escapeXml(f.name)}</primary-key-column>`
+        )
         .join('\n');
 
     return `
@@ -139,7 +141,7 @@ ${pkColumns}
  */
 function generateForeignKeysXML(table: DBTable, diagram: Diagram): string {
     const { relationships = [] } = diagram;
-    
+
     // Find all relationships where this table is the source
     const tableForeignKeys = relationships.filter(
         (rel) => rel.sourceTableId === table.id
@@ -149,29 +151,33 @@ function generateForeignKeysXML(table: DBTable, diagram: Diagram): string {
         return '';
     }
 
-    const foreignKeysXml = tableForeignKeys.map((rel) => {
-        const targetTable = diagram.tables?.find((t) => t.id === rel.targetTableId);
-        if (!targetTable) return '';
+    const foreignKeysXml = tableForeignKeys
+        .map((rel) => {
+            const targetTable = diagram.tables?.find(
+                (t) => t.id === rel.targetTableId
+            );
+            if (!targetTable) return '';
 
-        const fkName = `fk_${table.name}_${targetTable.name}`;
-        const refTableName = targetTable.name;
+            const fkName = `fk_${table.name}_${targetTable.name}`;
+            const refTableName = targetTable.name;
 
-        // Build FK columns mapping
-        const fkColumns = rel.sourceFieldId && rel.targetFieldId ? 
-            `                <fk-columns>
+            // Build FK columns mapping
+            const fkColumns =
+                rel.sourceFieldId && rel.targetFieldId
+                    ? `                <fk-columns>
                     <fk-column>
                         <fk-local-column>${escapeXml(getFieldName(table, rel.sourceFieldId))}</fk-local-column>
                         <fk-reference-column>${escapeXml(getFieldName(targetTable, rel.targetFieldId))}</fk-reference-column>
                     </fk-column>
-                </fk-columns>` : '';
+                </fk-columns>`
+                    : '';
 
-        const constraints = rel.updateAction || rel.deleteAction ? 
-            `\n                <fk-constraints>${rel.deleteAction ? `ON-DELETE-${rel.deleteAction.toUpperCase()}` : ''}${rel.updateAction ? ` ON-UPDATE-${rel.updateAction.toUpperCase()}` : ''}</fk-constraints>` : '';
-
-        return `            <foreign-key name="${escapeXml(fkName)}" reference-table-name="${escapeXml(refTableName)}">
-${fkColumns}${constraints}
+            return `            <foreign-key name="${escapeXml(fkName)}" reference-table-name="${escapeXml(refTableName)}">
+${fkColumns}
             </foreign-key>`;
-    }).filter(Boolean).join('\n');
+        })
+        .filter(Boolean)
+        .join('\n');
 
     if (!foreignKeysXml) {
         return '';
@@ -188,23 +194,25 @@ ${foreignKeysXml}
  */
 function generateIndexesXML(table: DBTable): string {
     const { indexes = [] } = table;
-    
+
     if (indexes.length === 0) {
         return '';
     }
 
-    const indexesXml = indexes.map((index) => {
-        const indexColumns = index.fieldIds
-            .map((fieldId) => {
-                const fieldName = getFieldName(table, fieldId);
-                return `                <index-column>${escapeXml(fieldName)}</index-column>`;
-            })
-            .join('\n');
+    const indexesXml = indexes
+        .map((index) => {
+            const indexColumns = index.fieldIds
+                .map((fieldId) => {
+                    const fieldName = getFieldName(table, fieldId);
+                    return `                <index-column>${escapeXml(fieldName)}</index-column>`;
+                })
+                .join('\n');
 
-        return `            <index name="${escapeXml(index.name)}">
+            return `            <index name="${escapeXml(index.name)}">
 ${indexColumns}
             </index>`;
-    }).join('\n');
+        })
+        .join('\n');
 
     return `
         <indexes>

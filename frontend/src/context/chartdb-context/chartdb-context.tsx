@@ -20,7 +20,16 @@ export type ChartDBEventType =
     | 'remove_tables'
     | 'add_field'
     | 'remove_field'
-    | 'load_diagram';
+    | 'load_diagram'
+    | 'add_relationship'
+    | 'remove_relationship'
+    | 'update_relationship'
+    | 'add_area'
+    | 'remove_area'
+    | 'update_area'
+    | 'add_note'
+    | 'remove_note'
+    | 'update_note';
 
 export type ChartDBEventBase<T extends ChartDBEventType, D> = {
     action: T;
@@ -57,13 +66,64 @@ export type LoadDiagramEvent = ChartDBEventBase<
     { diagram: Diagram }
 >;
 
+// Relationship events
+export type AddRelationshipEvent = ChartDBEventBase<
+    'add_relationship',
+    { relationship: DBRelationship }
+>;
+
+export type RemoveRelationshipEvent = ChartDBEventBase<
+    'remove_relationship',
+    { relationshipId: string }
+>;
+
+export type UpdateRelationshipEvent = ChartDBEventBase<
+    'update_relationship',
+    { relationshipId: string; relationship: Partial<DBRelationship> }
+>;
+
+// Area events
+export type AddAreaEvent = ChartDBEventBase<'add_area', { area: Area }>;
+
+export type RemoveAreaEvent = ChartDBEventBase<
+    'remove_area',
+    { areaId: string }
+>;
+
+export type UpdateAreaEvent = ChartDBEventBase<
+    'update_area',
+    { areaId: string; area: Partial<Area> }
+>;
+
+// Note events
+export type AddNoteEvent = ChartDBEventBase<'add_note', { note: Note }>;
+
+export type RemoveNoteEvent = ChartDBEventBase<
+    'remove_note',
+    { noteId: string }
+>;
+
+export type UpdateNoteEvent = ChartDBEventBase<
+    'update_note',
+    { noteId: string; note: Partial<Note> }
+>;
+
 export type ChartDBEvent =
     | CreateTableEvent
     | UpdateTableEvent
     | RemoveTableEvent
     | AddFieldEvent
     | RemoveFieldEvent
-    | LoadDiagramEvent;
+    | LoadDiagramEvent
+    | AddRelationshipEvent
+    | RemoveRelationshipEvent
+    | UpdateRelationshipEvent
+    | AddAreaEvent
+    | RemoveAreaEvent
+    | UpdateAreaEvent
+    | AddNoteEvent
+    | RemoveNoteEvent
+    | UpdateNoteEvent;
 
 export interface ChartDBContext {
     diagramId: string;

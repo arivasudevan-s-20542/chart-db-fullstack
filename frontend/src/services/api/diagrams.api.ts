@@ -14,7 +14,12 @@ interface ApiResponse<T> {
 const unwrap = <T>(response: { data: ApiResponse<T> | T }): T => {
     const data = response.data as any;
     // Check if it's wrapped in ApiResponse
-    if (data && typeof data === 'object' && 'success' in data && 'data' in data) {
+    if (
+        data &&
+        typeof data === 'object' &&
+        'success' in data &&
+        'data' in data
+    ) {
         return data.data;
     }
     return data;
@@ -36,7 +41,7 @@ export interface DiagramDTO {
 }
 
 export interface CreateDiagramRequest {
-    id?: string;  // Optional: frontend can provide ID
+    id?: string; // Optional: frontend can provide ID
     name: string;
     description?: string;
     databaseType: string;
@@ -98,14 +103,15 @@ export const diagramsApi = {
         const diagram = toDiagram(dto);
 
         // Load all related data in parallel
-        const [tables, relationships, dependencies, areas, customTypes, notes] = await Promise.all([
-            diagramsApi.getTables(id),
-            diagramsApi.getRelationships(id),
-            diagramsApi.getDependencies(id),
-            diagramsApi.getAreas(id),
-            diagramsApi.getCustomTypes(id),
-            diagramsApi.getNotes(id),
-        ]);
+        const [tables, relationships, dependencies, areas, customTypes, notes] =
+            await Promise.all([
+                diagramsApi.getTables(id),
+                diagramsApi.getRelationships(id),
+                diagramsApi.getDependencies(id),
+                diagramsApi.getAreas(id),
+                diagramsApi.getCustomTypes(id),
+                diagramsApi.getNotes(id),
+            ]);
 
         return {
             ...diagram,
@@ -121,7 +127,9 @@ export const diagramsApi = {
     /**
      * Create a new diagram
      */
-    createDiagram: async (request: CreateDiagramRequest): Promise<DiagramDTO> => {
+    createDiagram: async (
+        request: CreateDiagramRequest
+    ): Promise<DiagramDTO> => {
         const response = await apiClient.post('/diagrams', request);
         return unwrap(response);
     },
@@ -129,7 +137,10 @@ export const diagramsApi = {
     /**
      * Update diagram metadata
      */
-    updateDiagram: async (id: string, request: UpdateDiagramRequest): Promise<DiagramDTO> => {
+    updateDiagram: async (
+        id: string,
+        request: UpdateDiagramRequest
+    ): Promise<DiagramDTO> => {
         const response = await apiClient.put(`/diagrams/${id}`, request);
         return unwrap(response);
     },
@@ -150,7 +161,9 @@ export const diagramsApi = {
      */
     getTables: async (diagramId: string): Promise<any[]> => {
         try {
-            const response = await apiClient.get(`/diagrams/${diagramId}/tables`);
+            const response = await apiClient.get(
+                `/diagrams/${diagramId}/tables`
+            );
             const data = unwrap<any[]>(response);
             return (data || []).map(mapTableFromBackend);
         } catch {
@@ -172,7 +185,11 @@ export const diagramsApi = {
     /**
      * Update a table
      */
-    updateTable: async (diagramId: string, tableId: string, table: any): Promise<any> => {
+    updateTable: async (
+        diagramId: string,
+        tableId: string,
+        table: any
+    ): Promise<any> => {
         const response = await apiClient.put(
             `/diagrams/${diagramId}/tables/${tableId}`,
             mapTableToBackend(table)
@@ -196,7 +213,9 @@ export const diagramsApi = {
      */
     getColumns: async (diagramId: string, tableId: string): Promise<any[]> => {
         try {
-            const response = await apiClient.get(`/diagrams/${diagramId}/tables/${tableId}/columns`);
+            const response = await apiClient.get(
+                `/diagrams/${diagramId}/tables/${tableId}/columns`
+            );
             const data = unwrap<any[]>(response);
             return (data || []).map(mapColumnFromBackend);
         } catch {
@@ -207,7 +226,11 @@ export const diagramsApi = {
     /**
      * Create a column
      */
-    createColumn: async (diagramId: string, tableId: string, column: any): Promise<any> => {
+    createColumn: async (
+        diagramId: string,
+        tableId: string,
+        column: any
+    ): Promise<any> => {
         const response = await apiClient.post(
             `/diagrams/${diagramId}/tables/${tableId}/columns`,
             mapColumnToBackend(column)
@@ -234,8 +257,14 @@ export const diagramsApi = {
     /**
      * Delete a column
      */
-    deleteColumn: async (diagramId: string, tableId: string, columnId: string): Promise<void> => {
-        await apiClient.delete(`/diagrams/${diagramId}/tables/${tableId}/columns/${columnId}`);
+    deleteColumn: async (
+        diagramId: string,
+        tableId: string,
+        columnId: string
+    ): Promise<void> => {
+        await apiClient.delete(
+            `/diagrams/${diagramId}/tables/${tableId}/columns/${columnId}`
+        );
     },
 
     // ===================
@@ -247,7 +276,9 @@ export const diagramsApi = {
      */
     getRelationships: async (diagramId: string): Promise<any[]> => {
         try {
-            const response = await apiClient.get(`/diagrams/${diagramId}/relationships`);
+            const response = await apiClient.get(
+                `/diagrams/${diagramId}/relationships`
+            );
             const data = unwrap<any[]>(response);
             return (data || []).map(mapRelationshipFromBackend);
         } catch {
@@ -258,7 +289,10 @@ export const diagramsApi = {
     /**
      * Create a relationship
      */
-    createRelationship: async (diagramId: string, relationship: any): Promise<any> => {
+    createRelationship: async (
+        diagramId: string,
+        relationship: any
+    ): Promise<any> => {
         const response = await apiClient.post(
             `/diagrams/${diagramId}/relationships`,
             mapRelationshipToBackend(relationship)
@@ -284,8 +318,13 @@ export const diagramsApi = {
     /**
      * Delete a relationship
      */
-    deleteRelationship: async (diagramId: string, relationshipId: string): Promise<void> => {
-        await apiClient.delete(`/diagrams/${diagramId}/relationships/${relationshipId}`);
+    deleteRelationship: async (
+        diagramId: string,
+        relationshipId: string
+    ): Promise<void> => {
+        await apiClient.delete(
+            `/diagrams/${diagramId}/relationships/${relationshipId}`
+        );
     },
 
     // ===================
@@ -294,15 +333,23 @@ export const diagramsApi = {
 
     getDependencies: async (diagramId: string): Promise<any[]> => {
         try {
-            const response = await apiClient.get(`/diagrams/${diagramId}/dependencies`);
+            const response = await apiClient.get(
+                `/diagrams/${diagramId}/dependencies`
+            );
             return unwrap<any[]>(response) || [];
         } catch {
             return [];
         }
     },
 
-    createDependency: async (diagramId: string, dependency: any): Promise<any> => {
-        const response = await apiClient.post(`/diagrams/${diagramId}/dependencies`, dependency);
+    createDependency: async (
+        diagramId: string,
+        dependency: any
+    ): Promise<any> => {
+        const response = await apiClient.post(
+            `/diagrams/${diagramId}/dependencies`,
+            dependency
+        );
         return unwrap(response);
     },
 
@@ -318,8 +365,13 @@ export const diagramsApi = {
         return unwrap(response);
     },
 
-    deleteDependency: async (diagramId: string, dependencyId: string): Promise<void> => {
-        await apiClient.delete(`/diagrams/${diagramId}/dependencies/${dependencyId}`);
+    deleteDependency: async (
+        diagramId: string,
+        dependencyId: string
+    ): Promise<void> => {
+        await apiClient.delete(
+            `/diagrams/${diagramId}/dependencies/${dependencyId}`
+        );
     },
 
     // ===================
@@ -328,7 +380,9 @@ export const diagramsApi = {
 
     getAreas: async (diagramId: string): Promise<any[]> => {
         try {
-            const response = await apiClient.get(`/diagrams/${diagramId}/areas`);
+            const response = await apiClient.get(
+                `/diagrams/${diagramId}/areas`
+            );
             const data = unwrap<any[]>(response);
             return (data || []).map(mapAreaFromBackend);
         } catch {
@@ -344,7 +398,11 @@ export const diagramsApi = {
         return mapAreaFromBackend(unwrap(response));
     },
 
-    updateArea: async (diagramId: string, areaId: string, area: any): Promise<any> => {
+    updateArea: async (
+        diagramId: string,
+        areaId: string,
+        area: any
+    ): Promise<any> => {
         const response = await apiClient.put(
             `/diagrams/${diagramId}/areas/${areaId}`,
             mapAreaToBackend(area)
@@ -362,15 +420,23 @@ export const diagramsApi = {
 
     getCustomTypes: async (diagramId: string): Promise<any[]> => {
         try {
-            const response = await apiClient.get(`/diagrams/${diagramId}/custom-types`);
+            const response = await apiClient.get(
+                `/diagrams/${diagramId}/custom-types`
+            );
             return unwrap<any[]>(response) || [];
         } catch {
             return [];
         }
     },
 
-    createCustomType: async (diagramId: string, customType: any): Promise<any> => {
-        const response = await apiClient.post(`/diagrams/${diagramId}/custom-types`, customType);
+    createCustomType: async (
+        diagramId: string,
+        customType: any
+    ): Promise<any> => {
+        const response = await apiClient.post(
+            `/diagrams/${diagramId}/custom-types`,
+            customType
+        );
         return unwrap(response);
     },
 
@@ -386,8 +452,13 @@ export const diagramsApi = {
         return unwrap(response);
     },
 
-    deleteCustomType: async (diagramId: string, customTypeId: string): Promise<void> => {
-        await apiClient.delete(`/diagrams/${diagramId}/custom-types/${customTypeId}`);
+    deleteCustomType: async (
+        diagramId: string,
+        customTypeId: string
+    ): Promise<void> => {
+        await apiClient.delete(
+            `/diagrams/${diagramId}/custom-types/${customTypeId}`
+        );
     },
 
     // ===================
@@ -396,7 +467,9 @@ export const diagramsApi = {
 
     getNotes: async (diagramId: string): Promise<any[]> => {
         try {
-            const response = await apiClient.get(`/diagrams/${diagramId}/notes`);
+            const response = await apiClient.get(
+                `/diagrams/${diagramId}/notes`
+            );
             const data = unwrap<any[]>(response);
             return (data || []).map(mapNoteFromBackend);
         } catch {
@@ -412,7 +485,11 @@ export const diagramsApi = {
         return mapNoteFromBackend(unwrap(response));
     },
 
-    updateNote: async (diagramId: string, noteId: string, note: any): Promise<any> => {
+    updateNote: async (
+        diagramId: string,
+        noteId: string,
+        note: any
+    ): Promise<any> => {
         const response = await apiClient.put(
             `/diagrams/${diagramId}/notes/${noteId}`,
             mapNoteToBackend(note)
@@ -438,9 +515,9 @@ export const diagramsApi = {
     ): Promise<void> => {
         // Map frontend permission names to backend PermissionLevel enum
         const permissionMap: Record<string, string> = {
-            'VIEW': 'VIEWER',
-            'EDIT': 'EDITOR',
-            'ADMIN': 'ADMIN',
+            VIEW: 'VIEWER',
+            EDIT: 'EDITOR',
+            ADMIN: 'ADMIN',
         };
         await apiClient.post(`/diagrams/${diagramId}/share`, {
             email,
@@ -451,7 +528,10 @@ export const diagramsApi = {
     /**
      * Remove sharing for a user
      */
-    unshareDiagram: async (diagramId: string, userId: string): Promise<void> => {
+    unshareDiagram: async (
+        diagramId: string,
+        userId: string
+    ): Promise<void> => {
         await apiClient.delete(`/diagrams/${diagramId}/share/${userId}`);
     },
 
@@ -460,7 +540,9 @@ export const diagramsApi = {
      */
     getCollaborators: async (diagramId: string): Promise<any[]> => {
         try {
-            const response = await apiClient.get(`/diagrams/${diagramId}/collaborators`);
+            const response = await apiClient.get(
+                `/diagrams/${diagramId}/collaborators`
+            );
             return unwrap<any[]>(response) || [];
         } catch {
             return [];

@@ -19,7 +19,8 @@ const stringToColor = (str: string) => {
 };
 
 export const CollaborationIndicator: React.FC = () => {
-    const { isConnected, isConnecting, activeUsers, currentDiagramId } = useCollaboration();
+    const { isConnected, isConnecting, activeUsers, currentDiagramId } =
+        useCollaboration();
 
     // Don't show if not in a diagram session
     if (!currentDiagramId) {
@@ -45,8 +46,8 @@ export const CollaborationIndicator: React.FC = () => {
                     {isConnecting
                         ? 'Connecting...'
                         : isConnected
-                        ? 'Real-time collaboration active'
-                        : 'Not connected'}
+                          ? 'Real-time collaboration active'
+                          : 'Not connected'}
                 </TooltipContent>
             </Tooltip>
 
@@ -54,7 +55,9 @@ export const CollaborationIndicator: React.FC = () => {
             {activeUsers.length > 0 && (
                 <div className="flex items-center gap-1">
                     <Users className="size-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{activeUsers.length}</span>
+                    <span className="text-sm text-muted-foreground">
+                        {activeUsers.length}
+                    </span>
                     <div className="ml-1 flex -space-x-2">
                         {activeUsers.slice(0, 5).map((user) => {
                             const initials = user.name
@@ -66,14 +69,17 @@ export const CollaborationIndicator: React.FC = () => {
                                       .slice(0, 2)
                                 : user.email[0].toUpperCase();
 
-                            const bgColor = user.color || stringToColor(user.userId);
+                            const bgColor =
+                                user.color || stringToColor(user.userId);
 
                             return (
                                 <Tooltip key={user.userId}>
                                     <TooltipTrigger asChild>
                                         <Avatar className="size-6 border-2 border-background">
                                             <AvatarFallback
-                                                style={{ backgroundColor: bgColor }}
+                                                style={{
+                                                    backgroundColor: bgColor,
+                                                }}
                                                 className="text-xs text-white"
                                             >
                                                 {initials}
@@ -87,7 +93,8 @@ export const CollaborationIndicator: React.FC = () => {
                                             </div>
                                             {user.selectedElementId && (
                                                 <div className="text-xs text-muted-foreground">
-                                                    Editing: {user.selectedElementId}
+                                                    Editing:{' '}
+                                                    {user.selectedElementId}
                                                 </div>
                                             )}
                                         </div>

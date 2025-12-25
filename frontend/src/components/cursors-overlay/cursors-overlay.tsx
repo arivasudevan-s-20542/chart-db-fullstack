@@ -15,10 +15,15 @@ export const CursorsOverlay: React.FC = () => {
     const { activeUsers, currentDiagramId, subscribe } = useCollaboration();
     const { user } = useAuth();
     const { flowToScreenPosition } = useReactFlow();
-    const [cursors, setCursors] = useState<Map<string, CursorPosition>>(new Map());
+    const [cursors, setCursors] = useState<Map<string, CursorPosition>>(
+        new Map()
+    );
 
     useEffect(() => {
-        console.log('[CursorsOverlay] Effect running, currentDiagramId:', currentDiagramId);
+        console.log(
+            '[CursorsOverlay] Effect running, currentDiagramId:',
+            currentDiagramId
+        );
         if (!currentDiagramId) return;
 
         // Subscribe to cursor move events
@@ -30,12 +35,20 @@ export const CursorsOverlay: React.FC = () => {
                 const newCursors = new Map(prev);
                 newCursors.set(event.userId, {
                     userId: event.userId,
-                    userName: event.payload?.userDisplayName || event.userEmail || 'Unknown',
-                    color: event.payload?.cursorColor || stringToColor(event.userId),
+                    userName:
+                        event.payload?.userDisplayName ||
+                        event.userEmail ||
+                        'Unknown',
+                    color:
+                        event.payload?.cursorColor ||
+                        stringToColor(event.userId),
                     x: event.payload?.x ?? 0,
                     y: event.payload?.y ?? 0,
                 });
-                console.log('[CursorsOverlay] Updated cursors:', newCursors.size);
+                console.log(
+                    '[CursorsOverlay] Updated cursors:',
+                    newCursors.size
+                );
                 return newCursors;
             });
         });
@@ -58,7 +71,11 @@ export const CursorsOverlay: React.FC = () => {
     // Update cursors from activeUsers when they have cursor positions
     useEffect(() => {
         activeUsers.forEach((u) => {
-            if (u.userId !== user?.id && u.cursorX !== undefined && u.cursorY !== undefined) {
+            if (
+                u.userId !== user?.id &&
+                u.cursorX !== undefined &&
+                u.cursorY !== undefined
+            ) {
                 setCursors((prev) => {
                     const newCursors = new Map(prev);
                     newCursors.set(u.userId, {
@@ -96,7 +113,10 @@ export const CursorsOverlay: React.FC = () => {
         <div className="pointer-events-none absolute inset-0 z-50 overflow-hidden">
             {Array.from(cursors.values()).map((cursor) => {
                 // Transform flow coordinates to screen coordinates
-                const screenPos = flowToScreenPosition({ x: cursor.x, y: cursor.y });
+                const screenPos = flowToScreenPosition({
+                    x: cursor.x,
+                    y: cursor.y,
+                });
                 return (
                     <Cursor
                         key={cursor.userId}

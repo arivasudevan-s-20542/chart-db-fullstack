@@ -1,8 +1,14 @@
 import axios, { type AxiosInstance, type AxiosError } from 'axios';
-import { getAccessToken, getRefreshToken, setTokens, clearTokens } from './token-storage';
+import {
+    getAccessToken,
+    getRefreshToken,
+    setTokens,
+    clearTokens,
+} from './token-storage';
 
 // API Base URL - can be configured via environment variable
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+const API_BASE_URL =
+    import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 // Create axios instance
 export const apiClient: AxiosInstance = axios.create({
@@ -46,7 +52,9 @@ const processQueue = (error: Error | null, token: string | null = null) => {
 apiClient.interceptors.response.use(
     (response) => response,
     async (error: AxiosError) => {
-        const originalRequest = error.config as typeof error.config & { _retry?: boolean };
+        const originalRequest = error.config as typeof error.config & {
+            _retry?: boolean;
+        };
 
         // If error is 401 and we have a refresh token, try to refresh
         if (error.response?.status === 401 && !originalRequest._retry) {
@@ -77,13 +85,17 @@ apiClient.interceptors.response.use(
 
             try {
                 // Try to refresh the token
-                const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-                    refreshToken,
-                });
+                const response = await axios.post(
+                    `${API_BASE_URL}/auth/refresh`,
+                    {
+                        refreshToken,
+                    }
+                );
 
                 // Backend wraps response in {success, data: {accessToken, refreshToken}}
                 const responseData = response.data.data || response.data;
-                const { accessToken, refreshToken: newRefreshToken } = responseData;
+                const { accessToken, refreshToken: newRefreshToken } =
+                    responseData;
                 setTokens(accessToken, newRefreshToken);
                 processQueue(null, accessToken);
 

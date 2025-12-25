@@ -20,7 +20,15 @@ import {
 import { useChartDB } from '@/hooks/use-chartdb';
 import { useToast } from '@/components/toast/use-toast';
 import { diagramsApi } from '@/services/api/diagrams.api';
-import { Trash2, UserPlus, Users, Loader2, Crown, Copy, Check } from 'lucide-react';
+import {
+    Trash2,
+    UserPlus,
+    Users,
+    Loader2,
+    Crown,
+    Copy,
+    Check,
+} from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/avatar/avatar';
 import { Badge } from '@/components/badge/badge';
 import type { BaseDialogProps } from '../common/base-dialog-props';
@@ -94,24 +102,27 @@ export const ShareDiagramDialog: React.FC<ShareDiagramDialogProps> = ({
         }
     }, [diagramId, email, permission, toast]);
 
-    const handleRemove = useCallback(async (userId: string, userEmail: string) => {
-        if (!diagramId) return;
+    const handleRemove = useCallback(
+        async (userId: string, userEmail: string) => {
+            if (!diagramId) return;
 
-        try {
-            await diagramsApi.unshareDiagram(diagramId, userId);
-            toast({
-                title: 'Access removed',
-                description: `Removed access for ${userEmail}`,
-            });
-            loadCollaborators();
-        } catch (error: any) {
-            toast({
-                title: 'Failed to remove',
-                description: error.message || 'Could not remove access',
-                variant: 'destructive',
-            });
-        }
-    }, [diagramId, toast]);
+            try {
+                await diagramsApi.unshareDiagram(diagramId, userId);
+                toast({
+                    title: 'Access removed',
+                    description: `Removed access for ${userEmail}`,
+                });
+                loadCollaborators();
+            } catch (error: any) {
+                toast({
+                    title: 'Failed to remove',
+                    description: error.message || 'Could not remove access',
+                    variant: 'destructive',
+                });
+            }
+        },
+        [diagramId, toast]
+    );
 
     const handleCopyLink = useCallback(() => {
         const url = `${window.location.origin}/diagrams/${diagramId}`;
@@ -126,17 +137,26 @@ export const ShareDiagramDialog: React.FC<ShareDiagramDialogProps> = ({
 
     const getInitials = (name?: string, email?: string) => {
         if (name) {
-            return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+            return name
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+                .toUpperCase()
+                .slice(0, 2);
         }
         return email?.slice(0, 2).toUpperCase() || '??';
     };
 
     const getPermissionLabel = (perm: Permission) => {
         switch (perm) {
-            case 'VIEW': return 'Can view';
-            case 'EDIT': return 'Can edit';
-            case 'ADMIN': return 'Admin';
-            default: return perm;
+            case 'VIEW':
+                return 'Can view';
+            case 'EDIT':
+                return 'Can edit';
+            case 'ADMIN':
+                return 'Admin';
+            default:
+                return perm;
         }
     };
 
@@ -158,7 +178,8 @@ export const ShareDiagramDialog: React.FC<ShareDiagramDialogProps> = ({
                         Share Diagram
                     </DialogTitle>
                     <DialogDescription>
-                        Invite others to collaborate on "{currentDiagram?.name || 'this diagram'}"
+                        Invite others to collaborate on "
+                        {currentDiagram?.name || 'this diagram'}"
                     </DialogDescription>
                 </DialogHeader>
 
@@ -181,7 +202,9 @@ export const ShareDiagramDialog: React.FC<ShareDiagramDialogProps> = ({
                             />
                             <Select
                                 value={permission}
-                                onValueChange={(v) => setPermission(v as Permission)}
+                                onValueChange={(v) =>
+                                    setPermission(v as Permission)
+                                }
                             >
                                 <SelectTrigger className="w-28">
                                     <SelectValue />
@@ -248,12 +271,16 @@ export const ShareDiagramDialog: React.FC<ShareDiagramDialogProps> = ({
                                         <div className="flex items-center gap-2">
                                             <Avatar className="size-8">
                                                 <AvatarFallback className="text-xs">
-                                                    {getInitials(collab.name, collab.email)}
+                                                    {getInitials(
+                                                        collab.name,
+                                                        collab.email
+                                                    )}
                                                 </AvatarFallback>
                                             </Avatar>
                                             <div>
                                                 <p className="text-sm font-medium">
-                                                    {collab.name || collab.email}
+                                                    {collab.name ||
+                                                        collab.email}
                                                 </p>
                                                 {collab.name && (
                                                     <p className="text-xs text-muted-foreground">
@@ -264,20 +291,30 @@ export const ShareDiagramDialog: React.FC<ShareDiagramDialogProps> = ({
                                         </div>
                                         <div className="flex items-center gap-2">
                                             {collab.isOwner ? (
-                                                <Badge variant="secondary" className="gap-1">
+                                                <Badge
+                                                    variant="secondary"
+                                                    className="gap-1"
+                                                >
                                                     <Crown className="size-3" />
                                                     Owner
                                                 </Badge>
                                             ) : (
                                                 <>
                                                     <Badge variant="outline">
-                                                        {getPermissionLabel(collab.permission)}
+                                                        {getPermissionLabel(
+                                                            collab.permission
+                                                        )}
                                                     </Badge>
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
                                                         className="size-8 text-destructive hover:text-destructive"
-                                                        onClick={() => handleRemove(collab.userId, collab.email)}
+                                                        onClick={() =>
+                                                            handleRemove(
+                                                                collab.userId,
+                                                                collab.email
+                                                            )
+                                                        }
                                                     >
                                                         <Trash2 className="size-4" />
                                                     </Button>

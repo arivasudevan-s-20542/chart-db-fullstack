@@ -19,7 +19,8 @@ const routes: RouteObject[] = [
     {
         path: 'register',
         async lazy() {
-            const { RegisterPage } = await import('./pages/register-page/register-page');
+            const { RegisterPage } =
+                await import('./pages/register-page/register-page');
             return {
                 element: <RegisterPage />,
             };

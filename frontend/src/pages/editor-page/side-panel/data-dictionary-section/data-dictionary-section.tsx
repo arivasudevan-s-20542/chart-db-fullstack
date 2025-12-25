@@ -3,7 +3,9 @@ import { TableDataDictionary } from './table-data-dictionary/table-data-dictiona
 
 export interface DataDictionarySectionProps {}
 
-export const DataDictionarySection: React.FC<DataDictionarySectionProps> = () => {
+export const DataDictionarySection: React.FC<
+    DataDictionarySectionProps
+> = () => {
     return (
         <section
             className="flex flex-1 flex-col overflow-hidden px-2"

@@ -1,5 +1,9 @@
 import { createContext } from 'react';
-import type { UserPresence, DiagramEvent, DiagramEventType } from '@/services/api/websocket.service';
+import type {
+    UserPresence,
+    DiagramEvent,
+    DiagramEventType,
+} from '@/services/api/websocket.service';
 
 export interface CollaborationContextValue {
     // Connection state

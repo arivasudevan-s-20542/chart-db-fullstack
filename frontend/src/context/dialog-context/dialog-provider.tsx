@@ -140,8 +140,10 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
     // Export data dictionary dialog
     const [openExportDataDictionaryDialog, setOpenExportDataDictionaryDialog] =
         useState(false);
-    const [exportDataDictionaryDialogParams, setExportDataDictionaryDialogParams] =
-        useState<Omit<ExportDataDictionaryDialogProps, 'dialog'>>();
+    const [
+        exportDataDictionaryDialogParams,
+        setExportDataDictionaryDialogParams,
+    ] = useState<Omit<ExportDataDictionaryDialogProps, 'dialog'>>();
     const openExportDataDictionaryDialogHandler: DialogContext['openExportDataDictionaryDialog'] =
         useCallback(
             (params) => {
@@ -187,7 +189,8 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
                 openImportDiagramDialog: () => setOpenImportDiagramDialog(true),
                 closeImportDiagramDialog: () =>
                     setOpenImportDiagramDialog(false),
-                openExportDataDictionaryDialog: openExportDataDictionaryDialogHandler,
+                openExportDataDictionaryDialog:
+                    openExportDataDictionaryDialogHandler,
                 closeExportDataDictionaryDialog: () =>
                     setOpenExportDataDictionaryDialog(false),
                 openShareDiagramDialog: openShareDiagramDialogHandler,
@@ -230,9 +233,7 @@ export const DialogProvider: React.FC<React.PropsWithChildren> = ({
                 dialog={{ open: openExportDataDictionaryDialog }}
                 {...exportDataDictionaryDialogParams}
             />
-            <ShareDiagramDialog
-                dialog={{ open: openShareDiagramDialog }}
-            />
+            <ShareDiagramDialog dialog={{ open: openShareDiagramDialog }} />
         </dialogContext.Provider>
     );
 };

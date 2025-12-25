@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useState, useRef } from 'react';
-import { collaborationContext, type CollaborationContextValue } from './collaboration-context';
+import {
+    collaborationContext,
+    type CollaborationContextValue,
+} from './collaboration-context';
 import {
     wsService,
     type UserPresence,
@@ -13,12 +16,16 @@ export interface CollaborationProviderProps {
     children: React.ReactNode;
 }
 
-export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({ children }) => {
+export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({
+    children,
+}) => {
     const { isAuthenticated } = useAuth();
     const [isConnected, setIsConnected] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
     const [activeUsers, setActiveUsers] = useState<UserPresence[]>([]);
-    const [currentDiagramId, setCurrentDiagramId] = useState<string | null>(null);
+    const [currentDiagramId, setCurrentDiagramId] = useState<string | null>(
+        null
+    );
 
     // Store event listeners in a ref to avoid stale closures
     const eventListenersRef = useRef<
@@ -26,14 +33,17 @@ export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({ ch
     >(new Map());
 
     // Handle presence updates
-    const handlePresenceUpdate = useCallback((session: CollaborationSession) => {
-        setActiveUsers(
-            session.users.map((user) => ({
-                ...user,
-                lastSeen: new Date(user.lastSeen),
-            }))
-        );
-    }, []);
+    const handlePresenceUpdate = useCallback(
+        (session: CollaborationSession) => {
+            setActiveUsers(
+                session.users.map((user) => ({
+                    ...user,
+                    lastSeen: new Date(user.lastSeen),
+                }))
+            );
+        },
+        []
+    );
 
     // Handle diagram events
     const handleDiagramEvent = useCallback((event: DiagramEvent) => {
@@ -66,13 +76,23 @@ export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({ ch
         const checkConnection = () => {
             const connected = wsService.isConnected();
             if (connected !== isConnected) {
-                console.log('[Collaboration] Connection state changed:', connected);
+                console.log(
+                    '[Collaboration] Connection state changed:',
+                    connected
+                );
                 setIsConnected(connected);
             }
-            
+
             // Auto-reconnect if we were connected to a diagram but lost connection
-            if (!connected && currentDiagramId && isAuthenticated && !isConnecting) {
-                console.log('[Collaboration] Lost connection, attempting to reconnect...');
+            if (
+                !connected &&
+                currentDiagramId &&
+                isAuthenticated &&
+                !isConnecting
+            ) {
+                console.log(
+                    '[Collaboration] Lost connection, attempting to reconnect...'
+                );
                 reconnect();
             }
         };
@@ -87,16 +107,19 @@ export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({ ch
     // Reconnect function
     const reconnect = async () => {
         if (isConnecting) return;
-        
+
         setIsConnecting(true);
         try {
             await wsService.connect();
             setIsConnected(true);
-            
+
             // Resubscribe to current diagram
             if (currentDiagramId) {
                 wsService.subscribeToDiagram(currentDiagramId);
-                console.log('[Collaboration] Reconnected and resubscribed to diagram:', currentDiagramId);
+                console.log(
+                    '[Collaboration] Reconnected and resubscribed to diagram:',
+                    currentDiagramId
+                );
             }
         } catch (error) {
             console.error('[Collaboration] Reconnection failed:', error);
@@ -136,7 +159,7 @@ export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({ ch
 
     const joinDiagram = useCallback(async (diagramId: string) => {
         console.log('[Collaboration] joinDiagram called:', diagramId);
-        
+
         if (!wsService.isConnected()) {
             setIsConnecting(true);
             try {
@@ -157,7 +180,12 @@ export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({ ch
 
         wsService.subscribeToDiagram(diagramId);
         setCurrentDiagramId(diagramId);
-        console.log('[Collaboration] Subscribed to diagram:', diagramId, 'isConnected:', wsService.isConnected());
+        console.log(
+            '[Collaboration] Subscribed to diagram:',
+            diagramId,
+            'isConnected:',
+            wsService.isConnected()
+        );
     }, []);
 
     const leaveDiagram = useCallback(() => {
@@ -198,14 +226,21 @@ export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({ ch
     const unlockElement = useCallback(
         (elementType: string, elementId: string) => {
             if (currentDiagramId) {
-                wsService.unlockElement(currentDiagramId, elementType, elementId);
+                wsService.unlockElement(
+                    currentDiagramId,
+                    elementType,
+                    elementId
+                );
             }
         },
         [currentDiagramId]
     );
 
     const subscribe = useCallback(
-        (eventType: DiagramEventType | '*', callback: (event: DiagramEvent) => void) => {
+        (
+            eventType: DiagramEventType | '*',
+            callback: (event: DiagramEvent) => void
+        ) => {
             if (!eventListenersRef.current.has(eventType)) {
                 eventListenersRef.current.set(eventType, new Set());
             }
@@ -236,7 +271,11 @@ export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({ ch
         subscribe,
     };
 
-    return <collaborationContext.Provider value={value}>{children}</collaborationContext.Provider>;
+    return (
+        <collaborationContext.Provider value={value}>
+            {children}
+        </collaborationContext.Provider>
+    );
 };
 
 export default CollaborationProvider;

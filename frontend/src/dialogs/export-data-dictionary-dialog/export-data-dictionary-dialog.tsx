@@ -32,7 +32,7 @@ export const ExportDataDictionaryDialog: React.FC<
     const { closeExportDataDictionaryDialog } = useDialog();
     const { currentDiagram } = useChartDB();
     const { filter } = useDiagramFilter();
-    const { t } = useTranslation();
+    useTranslation();
     const [xmlContent, setXmlContent] = React.useState<string>();
     const [error, setError] = React.useState<boolean>(false);
     const [isLoading, setIsLoading] = React.useState<boolean>(false);
@@ -58,7 +58,6 @@ export const ExportDataDictionaryDialog: React.FC<
         return Promise.resolve(
             exportDataDictionary({
                 diagram: filteredDiagram,
-                databaseType: currentDiagram.databaseType,
             })
         );
     }, [currentDiagram, filter]);
@@ -183,7 +182,7 @@ export const ExportDataDictionaryDialog: React.FC<
                         onClick={handleDownload}
                         disabled={!xmlContent}
                     >
-                        <Download className="mr-2 h-4 w-4" />
+                        <Download className="mr-2 size-4" />
                         Download XML
                     </Button>
                     <DialogClose asChild>

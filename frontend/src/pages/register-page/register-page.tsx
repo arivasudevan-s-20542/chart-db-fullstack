@@ -5,6 +5,7 @@ import { Button } from '@/components/button/button';
 import { Input } from '@/components/input/input';
 import { Label } from '@/components/label/label';
 import { Spinner } from '@/components/spinner/spinner';
+import { DatabaseType } from '@/lib/domain/database-type';
 import { DiagramIcon } from '@/components/diagram-icon/diagram-icon';
 
 export const RegisterPage: React.FC = () => {
@@ -23,7 +24,13 @@ export const RegisterPage: React.FC = () => {
             setLocalError(null);
             clearError();
 
-            if (!firstName || !lastName || !email || !password || !confirmPassword) {
+            if (
+                !firstName ||
+                !lastName ||
+                !email ||
+                !password ||
+                !confirmPassword
+            ) {
                 setLocalError('Please fill in all fields');
                 return;
             }
@@ -45,15 +52,26 @@ export const RegisterPage: React.FC = () => {
                 setLocalError(err.message || 'Registration failed');
             }
         },
-        [firstName, lastName, email, password, confirmPassword, register, navigate, clearError]
+        [
+            firstName,
+            lastName,
+            email,
+            password,
+            confirmPassword,
+            register,
+            navigate,
+            clearError,
+        ]
     );
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-background">
             <div className="w-full max-w-md space-y-8 rounded-lg border bg-card p-8 shadow-lg">
                 <div className="flex flex-col items-center space-y-2">
-                    <DiagramIcon />
-                    <h1 className="text-2xl font-bold tracking-tight">Create Account</h1>
+                    <DiagramIcon databaseType={DatabaseType.GENERIC} />
+                    <h1 className="text-2xl font-bold tracking-tight">
+                        Create Account
+                    </h1>
                     <p className="text-sm text-muted-foreground">
                         Sign up to start creating diagrams
                     </p>
@@ -124,7 +142,9 @@ export const RegisterPage: React.FC = () => {
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="confirmPassword">Confirm Password</Label>
+                        <Label htmlFor="confirmPassword">
+                            Confirm Password
+                        </Label>
                         <Input
                             id="confirmPassword"
                             type="password"
@@ -137,7 +157,11 @@ export const RegisterPage: React.FC = () => {
                         />
                     </div>
 
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                    <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={isLoading}
+                    >
                         {isLoading ? (
                             <>
                                 <Spinner className="mr-2 size-4" />

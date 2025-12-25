@@ -61,6 +61,12 @@ export default [
 
         rules: {
             '@typescript-eslint/consistent-type-imports': 'error',
+            '@typescript-eslint/no-explicit-any': 'warn',
+            '@typescript-eslint/no-unused-vars': [
+                'error',
+                { argsIgnorePattern: '^_' },
+            ],
+            'react-hooks/exhaustive-deps': 'warn',
 
             'react-refresh/only-export-components': [
                 'warn',

@@ -46,10 +46,10 @@ export const useDiagramLoader = () => {
                 }
 
                 setInitialDiagram(diagram);
-                
+
                 // Join WebSocket room for real-time collaboration
                 await joinDiagram(diagramId);
-                
+
                 hideLoader();
 
                 return;

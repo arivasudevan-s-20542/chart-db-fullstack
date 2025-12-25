@@ -1,22 +1,19 @@
 import React, { useState, useCallback } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/button/button';
 import { Input } from '@/components/input/input';
 import { Label } from '@/components/label/label';
 import { Spinner } from '@/components/spinner/spinner';
+import { DatabaseType } from '@/lib/domain/database-type';
 import { DiagramIcon } from '@/components/diagram-icon/diagram-icon';
 
 export const LoginPage: React.FC = () => {
     const navigate = useNavigate();
-    const location = useLocation();
     const { login, isLoading, error, clearError } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [localError, setLocalError] = useState<string | null>(null);
-
-    // After login, go to root which will show the open diagram dialog
-    const from = (location.state as any)?.from?.pathname || '/';
 
     const handleSubmit = useCallback(
         async (e: React.FormEvent) => {
@@ -44,8 +41,10 @@ export const LoginPage: React.FC = () => {
         <div className="flex min-h-screen items-center justify-center bg-background">
             <div className="w-full max-w-md space-y-8 rounded-lg border bg-card p-8 shadow-lg">
                 <div className="flex flex-col items-center space-y-2">
-                    <DiagramIcon />
-                    <h1 className="text-2xl font-bold tracking-tight">Welcome to ChartDB</h1>
+                    <DiagramIcon databaseType={DatabaseType.GENERIC} />
+                    <h1 className="text-2xl font-bold tracking-tight">
+                        Welcome to ChartDB
+                    </h1>
                     <p className="text-sm text-muted-foreground">
                         Sign in to your account to continue
                     </p>
@@ -86,7 +85,11 @@ export const LoginPage: React.FC = () => {
                         />
                     </div>
 
-                    <Button type="submit" className="w-full" disabled={isLoading}>
+                    <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={isLoading}
+                    >
                         {isLoading ? (
                             <>
                                 <Spinner className="mr-2 size-4" />
@@ -113,11 +116,17 @@ export const LoginPage: React.FC = () => {
                         <span className="w-full border-t" />
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-card px-2 text-muted-foreground">Or</span>
+                        <span className="bg-card px-2 text-muted-foreground">
+                            Or
+                        </span>
                     </div>
                 </div>
 
-                <Button variant="outline" className="w-full" onClick={() => navigate('/')}>
+                <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => navigate('/')}
+                >
                     Continue as Guest
                 </Button>
             </div>

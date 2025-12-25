@@ -10,16 +10,25 @@ import { BackendStorageProvider } from './backend-storage-provider';
  * - When authenticated: Uses BackendStorageProvider (API calls to backend)
  * - When not authenticated: Uses StorageProvider (IndexedDB/localStorage)
  */
-export const HybridStorageProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
+export const HybridStorageProvider: React.FC<React.PropsWithChildren> = ({
+    children,
+}) => {
     const { isAuthenticated, isLoading } = useAuth();
 
-    console.log('[HybridStorageProvider] isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
+    console.log(
+        '[HybridStorageProvider] isAuthenticated:',
+        isAuthenticated,
+        'isLoading:',
+        isLoading
+    );
 
     // Show loading state while checking auth
     if (isLoading) {
         return (
             <div className="flex min-h-screen items-center justify-center">
-                <div className="animate-pulse text-muted-foreground">Loading...</div>
+                <div className="animate-pulse text-muted-foreground">
+                    Loading...
+                </div>
             </div>
         );
     }

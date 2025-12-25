@@ -103,7 +103,10 @@ class WebSocketService {
 
                 // Resubscribe to diagram if we were connected before
                 if (this.currentDiagramId) {
-                    console.log('[WebSocket] Resubscribing to diagram:', this.currentDiagramId);
+                    console.log(
+                        '[WebSocket] Resubscribing to diagram:',
+                        this.currentDiagramId
+                    );
                     this.subscribeToDiagram(this.currentDiagramId);
                 }
 
@@ -111,12 +114,21 @@ class WebSocketService {
             };
 
             this.client.onStompError = (frame) => {
-                console.error('[WebSocket] STOMP error:', frame.headers['message'], frame);
+                console.error(
+                    '[WebSocket] STOMP error:',
+                    frame.headers['message'],
+                    frame
+                );
                 reject(new Error(frame.headers['message']));
             };
 
             this.client.onWebSocketClose = (event) => {
-                console.log('[WebSocket] Connection closed. Code:', event?.code, 'Reason:', event?.reason);
+                console.log(
+                    '[WebSocket] Connection closed. Code:',
+                    event?.code,
+                    'Reason:',
+                    event?.reason
+                );
                 this.reconnectAttempts++;
 
                 if (this.reconnectAttempts >= this.maxReconnectAttempts) {
@@ -286,21 +298,39 @@ class WebSocketService {
     /**
      * Lock an element for editing
      */
-    lockElement(diagramId: string, elementType: string, elementId: string): void {
-        this.sendMessage(`/app/diagram/${diagramId}/lock`, { elementType, elementId });
+    lockElement(
+        diagramId: string,
+        elementType: string,
+        elementId: string
+    ): void {
+        this.sendMessage(`/app/diagram/${diagramId}/lock`, {
+            elementType,
+            elementId,
+        });
     }
 
     /**
      * Unlock an element
      */
-    unlockElement(diagramId: string, elementType: string, elementId: string): void {
-        this.sendMessage(`/app/diagram/${diagramId}/unlock`, { elementType, elementId });
+    unlockElement(
+        diagramId: string,
+        elementType: string,
+        elementId: string
+    ): void {
+        this.sendMessage(`/app/diagram/${diagramId}/unlock`, {
+            elementType,
+            elementId,
+        });
     }
 
     /**
      * Send a diagram event (for real-time updates)
      */
-    sendDiagramEvent(diagramId: string, type: DiagramEventType, payload: any): void {
+    sendDiagramEvent(
+        diagramId: string,
+        type: DiagramEventType,
+        payload: any
+    ): void {
         this.sendMessage(`/app/diagram/${diagramId}/event`, { type, payload });
     }
 
@@ -322,7 +352,10 @@ class WebSocketService {
     /**
      * Add event listener
      */
-    addEventListener(eventType: DiagramEventType | '*', callback: EventCallback): void {
+    addEventListener(
+        eventType: DiagramEventType | '*',
+        callback: EventCallback
+    ): void {
         const key = eventType;
         if (!this.eventListeners.has(key)) {
             this.eventListeners.set(key, new Set());
@@ -333,7 +366,10 @@ class WebSocketService {
     /**
      * Remove event listener
      */
-    removeEventListener(eventType: DiagramEventType | '*', callback: EventCallback): void {
+    removeEventListener(
+        eventType: DiagramEventType | '*',
+        callback: EventCallback
+    ): void {
         const listeners = this.eventListeners.get(eventType);
         if (listeners) {
             listeners.delete(callback);

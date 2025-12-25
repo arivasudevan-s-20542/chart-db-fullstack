@@ -306,7 +306,9 @@ export const Menu: React.FC<MenuProps> = () => {
                             <MenubarItem onClick={openExportDiagramDialog}>
                                 JSON
                             </MenubarItem>
-                            <MenubarItem onClick={openExportDataDictionaryDialog}>
+                            <MenubarItem
+                                onClick={openExportDataDictionaryDialog}
+                            >
                                 Data Dictionary (XML)
                             </MenubarItem>
                         </MenubarSubContent>
@@ -496,7 +498,9 @@ export const Menu: React.FC<MenuProps> = () => {
                     <MenubarItem onClick={() => navigate('/dbml-viewer')}>
                         DBML Viewer
                     </MenubarItem>
-                    <MenubarItem onClick={() => navigate('/data-dictionary-viewer')}>
+                    <MenubarItem
+                        onClick={() => navigate('/data-dictionary-viewer')}
+                    >
                         Data Dictionary Viewer
                     </MenubarItem>
                 </MenubarContent>

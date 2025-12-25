@@ -1,10 +1,4 @@
-import React, {
-    useMemo,
-    useState,
-    useEffect,
-    useCallback,
-    useRef,
-} from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { useTheme } from '@/hooks/use-theme';
 import { CodeSnippet } from '@/components/code-snippet/code-snippet';
@@ -33,7 +27,6 @@ export const TableDataDictionary: React.FC<TableDataDictionaryProps> = () => {
             try {
                 const result = exportDataDictionary({
                     diagram: currentDiagram,
-                    databaseType,
                 });
 
                 setXmlContent(result);

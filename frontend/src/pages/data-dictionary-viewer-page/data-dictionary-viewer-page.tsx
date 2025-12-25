@@ -50,18 +50,20 @@ export const DataDictionaryViewerPage: React.FC = () => {
                         size="icon"
                         onClick={handleBackToEditor}
                     >
-                        <ArrowLeft className="h-5 w-5" />
+                        <ArrowLeft className="size-5" />
                     </Button>
                     <div className="flex items-center gap-2">
-                        <FileText className="h-6 w-6 text-primary" />
-                        <h1 className="text-2xl font-bold">Data Dictionary Viewer</h1>
+                        <FileText className="size-6 text-primary" />
+                        <h1 className="text-2xl font-bold">
+                            Data Dictionary Viewer
+                        </h1>
                     </div>
                 </div>
                 <div className="flex gap-2">
                     <label htmlFor="xml-file-upload">
                         <Button variant="outline" asChild>
                             <span className="cursor-pointer">
-                                <Upload className="mr-2 h-4 w-4" />
+                                <Upload className="mr-2 size-4" />
                                 Upload XML File
                             </span>
                         </Button>
@@ -85,7 +87,8 @@ export const DataDictionaryViewerPage: React.FC = () => {
                             Data Dictionary XML Input
                         </Label>
                         <p className="text-sm text-muted-foreground">
-                            Paste your Data Dictionary XML content or upload a file
+                            Paste your Data Dictionary XML content or upload a
+                            file
                         </p>
                     </div>
                     <Textarea
@@ -123,7 +126,7 @@ Example:
                     {xmlContent ? (
                         <div className="flex-1 overflow-hidden rounded-lg border">
                             <CodeSnippet
-                                className="h-full w-full"
+                                className="size-full"
                                 code={xmlContent}
                                 autoScroll={false}
                                 isComplete={true}
@@ -132,9 +135,10 @@ Example:
                     ) : (
                         <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed">
                             <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                                <FileText className="h-12 w-12" />
+                                <FileText className="size-12" />
                                 <p className="text-sm">
-                                    Upload a Data Dictionary XML file or paste content to view
+                                    Upload a Data Dictionary XML file or paste
+                                    content to view
                                 </p>
                             </div>
                         </div>
@@ -145,7 +149,10 @@ Example:
             {/* Footer */}
             <div className="border-t px-6 py-3">
                 <p className="text-sm text-muted-foreground">
-                    Data Dictionary XML format provides a structured representation of your database schema with detailed metadata about tables, columns, relationships, and constraints.
+                    Data Dictionary XML format provides a structured
+                    representation of your database schema with detailed
+                    metadata about tables, columns, relationships, and
+                    constraints.
                 </p>
             </div>
         </div>

@@ -264,7 +264,10 @@ export const OpenDiagramDialog: React.FC<OpenDiagramDialogProps> = ({
                             }}
                         >
                             <Plus className="mr-2 size-4" />
-                            {t('open_diagram_dialog.create_new', 'Create New Diagram')}
+                            {t(
+                                'open_diagram_dialog.create_new',
+                                'Create New Diagram'
+                            )}
                         </Button>
                     </div>
                     <Button

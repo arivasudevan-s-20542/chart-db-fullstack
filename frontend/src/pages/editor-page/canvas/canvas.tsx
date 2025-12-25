@@ -1446,7 +1446,8 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
     );
 
     // Collaboration - get sendCursorPosition from context
-    const { sendCursorPosition: sendCursorToWebSocket, currentDiagramId } = useCollaboration();
+    const { sendCursorPosition: sendCursorToWebSocket, currentDiagramId } =
+        useCollaboration();
 
     // Handle mouse move to update cursor position for floating edge AND send to WebSocket
     const { screenToFlowPosition } = useReactFlow();
@@ -1459,7 +1460,10 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
             const now = Date.now();
 
             // Send cursor position to WebSocket for collaboration (throttled)
-            if (currentDiagramId && now - lastCursorSentRef.current >= CURSOR_THROTTLE_MS) {
+            if (
+                currentDiagramId &&
+                now - lastCursorSentRef.current >= CURSOR_THROTTLE_MS
+            ) {
                 const position = screenToFlowPosition({
                     x: event.clientX,
                     y: event.clientY,
@@ -1485,7 +1489,12 @@ export const Canvas: React.FC<CanvasProps> = ({ initialTables }) => {
                 });
             }
         },
-        [tempFloatingEdge, screenToFlowPosition, currentDiagramId, sendCursorToWebSocket]
+        [
+            tempFloatingEdge,
+            screenToFlowPosition,
+            currentDiagramId,
+            sendCursorToWebSocket,
+        ]
     );
 
     // Cleanup RAF on unmount

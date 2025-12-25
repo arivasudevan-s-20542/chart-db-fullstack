@@ -10,7 +10,12 @@ export interface AuthContextValue {
 
     // Actions
     login: (email: string, password: string) => Promise<void>;
-    register: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
+    register: (
+        email: string,
+        password: string,
+        firstName: string,
+        lastName: string
+    ) => Promise<void>;
     logout: () => void;
     refreshUser: () => Promise<void>;
     clearError: () => void;

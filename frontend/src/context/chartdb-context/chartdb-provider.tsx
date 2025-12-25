@@ -300,9 +300,16 @@ export const ChartDBProvider: React.FC<
 
     const addTables: ChartDBContext['addTables'] = useCallback(
         async (tablesToAdd: DBTable[], options = { updateHistory: true }) => {
-            console.log('[ChartDBProvider] addTables called with diagramId:', diagramId, 'tables:', tablesToAdd.map(t => t.name));
+            console.log(
+                '[ChartDBProvider] addTables called with diagramId:',
+                diagramId,
+                'tables:',
+                tablesToAdd.map((t) => t.name)
+            );
             if (!diagramId) {
-                console.error('[ChartDBProvider] ERROR: addTables called but diagramId is empty!');
+                console.error(
+                    '[ChartDBProvider] ERROR: addTables called but diagramId is empty!'
+                );
             }
             setTables((currentTables) => [...currentTables, ...tablesToAdd]);
             const updatedAt = new Date();
@@ -589,15 +596,17 @@ export const ChartDBProvider: React.FC<
 
             // Emit events for updated tables (e.g., position changes)
             for (const updatedTable of updatedTables) {
-                const prevTable = prevTables.find((t) => t.id === updatedTable.id);
+                const prevTable = prevTables.find(
+                    (t) => t.id === updatedTable.id
+                );
                 if (prevTable) {
                     // Check if something actually changed
-                    const hasChanges = 
+                    const hasChanges =
                         prevTable.x !== updatedTable.x ||
                         prevTable.y !== updatedTable.y ||
                         prevTable.width !== updatedTable.width ||
                         prevTable.name !== updatedTable.name;
-                    
+
                     if (hasChanges) {
                         events.emit({
                             action: 'update_table',
@@ -1603,7 +1612,15 @@ export const ChartDBProvider: React.FC<
                 resetRedoStack();
             }
         },
-        [db, diagramId, setAreas, getArea, addUndoAction, resetRedoStack, events]
+        [
+            db,
+            diagramId,
+            setAreas,
+            getArea,
+            addUndoAction,
+            resetRedoStack,
+            events,
+        ]
     );
 
     // Note operations
@@ -1749,7 +1766,15 @@ export const ChartDBProvider: React.FC<
                 resetRedoStack();
             }
         },
-        [db, diagramId, setNotes, getNote, addUndoAction, resetRedoStack, events]
+        [
+            db,
+            diagramId,
+            setNotes,
+            getNote,
+            addUndoAction,
+            resetRedoStack,
+            events,
+        ]
     );
 
     const highlightCustomTypeId = useCallback(
@@ -1766,7 +1791,10 @@ export const ChartDBProvider: React.FC<
     const loadDiagramFromData: ChartDBContext['loadDiagramFromData'] =
         useCallback(
             (diagram) => {
-                console.log('[ChartDBProvider] loadDiagramFromData called with diagram id:', diagram.id);
+                console.log(
+                    '[ChartDBProvider] loadDiagramFromData called with diagram id:',
+                    diagram.id
+                );
                 setDiagramId(diagram.id);
                 setDiagramName(diagram.name);
                 setDatabaseType(diagram.databaseType);
@@ -1780,7 +1808,11 @@ export const ChartDBProvider: React.FC<
                 setDiagramUpdatedAt(diagram.updatedAt);
                 setHighlightedCustomTypeId(undefined);
                 setNotes(diagram.notes ?? []);
-                console.log('[ChartDBProvider] diagram loaded with', (diagram.tables ?? []).length, 'tables');
+                console.log(
+                    '[ChartDBProvider] diagram loaded with',
+                    (diagram.tables ?? []).length,
+                    'tables'
+                );
 
                 events.emit({ action: 'load_diagram', data: { diagram } });
 

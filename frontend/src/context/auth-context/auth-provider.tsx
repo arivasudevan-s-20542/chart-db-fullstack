@@ -86,11 +86,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }, []);
 
     const register = useCallback(
-        async (email: string, password: string, firstName: string, lastName: string) => {
+        async (
+            email: string,
+            password: string,
+            firstName: string,
+            lastName: string
+        ) => {
             setIsLoading(true);
             setError(null);
             try {
-                await authApi.register({ email, password, firstName, lastName });
+                await authApi.register({
+                    email,
+                    password,
+                    firstName,
+                    lastName,
+                });
                 const userProfile = await authApi.getCurrentUser();
                 setUser(userProfile);
                 setIsAuthenticated(true);
@@ -148,7 +158,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         clearError,
     };
 
-    return <authContext.Provider value={value}>{children}</authContext.Provider>;
+    return (
+        <authContext.Provider value={value}>{children}</authContext.Provider>
+    );
 };
 
 export default AuthProvider;

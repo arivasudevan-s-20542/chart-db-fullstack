@@ -1,18 +1,16 @@
 import React, { useCallback } from 'react';
 import type { StorageContext } from './storage-context';
-import { storageContext, storageInitialValue } from './storage-context';
+import { storageContext } from './storage-context';
 import type { Diagram } from '@/lib/domain/diagram';
 import type { DBTable } from '@/lib/domain/db-table';
 import type { DBRelationship } from '@/lib/domain/db-relationship';
-import type { ChartDBConfig } from '@/lib/domain/config';
 import type { DBDependency } from '@/lib/domain/db-dependency';
 import type { Area } from '@/lib/domain/area';
 import type { DBCustomType } from '@/lib/domain/db-custom-type';
-import type { DiagramFilter } from '@/lib/domain/diagram-filter/diagram-filter';
 import type { Note } from '@/lib/domain/note';
 import { diagramsApi } from '@/services/api/diagrams.api';
 import { isAuthenticated } from '@/services/api/token-storage';
-import { DatabaseType } from '@/lib/domain/database-type';
+import type { DatabaseType } from '@/lib/domain/database-type';
 
 // In-memory cache for diagram data to reduce API calls
 interface DiagramCache {
@@ -60,21 +58,29 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
         }
     }, []);
 
-    const updateConfig: StorageContext['updateConfig'] = useCallback(async (config) => {
-        try {
-            const current = localStorage.getItem(CONFIG_KEY);
-            const merged = { ...(current ? JSON.parse(current) : {}), ...config };
-            localStorage.setItem(CONFIG_KEY, JSON.stringify(merged));
-        } catch (e) {
-            console.error('Failed to update config:', e);
-        }
-    }, []);
+    const updateConfig: StorageContext['updateConfig'] = useCallback(
+        async (config) => {
+            try {
+                const current = localStorage.getItem(CONFIG_KEY);
+                const merged = {
+                    ...(current ? JSON.parse(current) : {}),
+                    ...config,
+                };
+                localStorage.setItem(CONFIG_KEY, JSON.stringify(merged));
+            } catch (e) {
+                console.error('Failed to update config:', e);
+            }
+        },
+        []
+    );
 
     // Diagram filter operations - stored locally
     const getDiagramFilter: StorageContext['getDiagramFilter'] = useCallback(
         async (diagramId: string) => {
             try {
-                const stored = localStorage.getItem(FILTER_KEY_PREFIX + diagramId);
+                const stored = localStorage.getItem(
+                    FILTER_KEY_PREFIX + diagramId
+                );
                 return stored ? JSON.parse(stored) : undefined;
             } catch {
                 return undefined;
@@ -83,54 +89,64 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
         []
     );
 
-    const updateDiagramFilter: StorageContext['updateDiagramFilter'] = useCallback(
-        async (diagramId, filter) => {
-            localStorage.setItem(FILTER_KEY_PREFIX + diagramId, JSON.stringify(filter));
-        },
-        []
-    );
+    const updateDiagramFilter: StorageContext['updateDiagramFilter'] =
+        useCallback(async (diagramId, filter) => {
+            localStorage.setItem(
+                FILTER_KEY_PREFIX + diagramId,
+                JSON.stringify(filter)
+            );
+        }, []);
 
-    const deleteDiagramFilter: StorageContext['deleteDiagramFilter'] = useCallback(
-        async (diagramId: string) => {
+    const deleteDiagramFilter: StorageContext['deleteDiagramFilter'] =
+        useCallback(async (diagramId: string) => {
             localStorage.removeItem(FILTER_KEY_PREFIX + diagramId);
-        },
-        []
-    );
+        }, []);
 
     // Diagram operations
     const addDiagram: StorageContext['addDiagram'] = useCallback(
         async ({ diagram }) => {
             if (!isAuthenticated()) return;
 
-            console.log('[BackendStorageProvider] Creating diagram in backend:', diagram.id);
+            console.log(
+                '[BackendStorageProvider] Creating diagram in backend:',
+                diagram.id
+            );
             await diagramsApi.createDiagram({
-                id: diagram.id,  // Pass the frontend-generated ID to backend
+                id: diagram.id, // Pass the frontend-generated ID to backend
                 name: diagram.name,
                 databaseType: diagram.databaseType,
                 databaseEdition: diagram.databaseEdition,
             });
-            console.log('[BackendStorageProvider] Diagram created successfully:', diagram.id);
+            console.log(
+                '[BackendStorageProvider] Diagram created successfully:',
+                diagram.id
+            );
 
             // Also save tables, relationships, and other entities if present
             const diagramId = diagram.id;
 
             // Save tables with their fields as columns
             if (diagram.tables && diagram.tables.length > 0) {
-                console.log('[BackendStorageProvider] Saving', diagram.tables.length, 'tables');
+                console.log(
+                    '[BackendStorageProvider] Saving',
+                    diagram.tables.length,
+                    'tables'
+                );
                 for (const table of diagram.tables) {
                     try {
                         // Map fields to columns for the backend
-                        const columns = table.fields?.map((field, index) => ({
-                            id: field.id,
-                            name: field.name,
-                            type: field.type?.name || field.type,
-                            isPrimaryKey: field.primaryKey || false,
-                            isNullable: field.nullable !== false,
-                            isUnique: field.unique || false,
-                            defaultValue: field.default,
-                            comment: field.comments,
-                            orderIndex: index,
-                        })) || [];
+                        const columns =
+                            table.fields?.map((field, index) => ({
+                                id: field.id,
+                                name: field.name,
+                                type: field.type?.name || field.type,
+                                isPrimaryKey: field.primaryKey || false,
+                                isNullable: field.nullable !== false,
+                                isUnique: field.unique || false,
+                                defaultValue: field.default,
+                                comment: field.comments,
+                                orderIndex: index,
+                            })) || [];
 
                         await diagramsApi.createTable(diagramId, {
                             id: table.id,
@@ -143,16 +159,27 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
                             isView: table.isView,
                             columns,
                         });
-                        console.log('[BackendStorageProvider] Table saved:', table.name);
+                        console.log(
+                            '[BackendStorageProvider] Table saved:',
+                            table.name
+                        );
                     } catch (e) {
-                        console.error('[BackendStorageProvider] Failed to save table:', table.name, e);
+                        console.error(
+                            '[BackendStorageProvider] Failed to save table:',
+                            table.name,
+                            e
+                        );
                     }
                 }
             }
 
             // Save relationships
             if (diagram.relationships && diagram.relationships.length > 0) {
-                console.log('[BackendStorageProvider] Saving', diagram.relationships.length, 'relationships');
+                console.log(
+                    '[BackendStorageProvider] Saving',
+                    diagram.relationships.length,
+                    'relationships'
+                );
                 for (const rel of diagram.relationships) {
                     try {
                         await diagramsApi.createRelationship(diagramId, {
@@ -165,61 +192,115 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
                             sourceCardinality: rel.sourceCardinality,
                             targetCardinality: rel.targetCardinality,
                         });
-                        console.log('[BackendStorageProvider] Relationship saved:', rel.name || rel.id);
+                        console.log(
+                            '[BackendStorageProvider] Relationship saved:',
+                            rel.name || rel.id
+                        );
                     } catch (e) {
-                        console.error('[BackendStorageProvider] Failed to save relationship:', rel.id, e);
+                        console.error(
+                            '[BackendStorageProvider] Failed to save relationship:',
+                            rel.id,
+                            e
+                        );
                     }
                 }
             }
 
             // Save areas
             if (diagram.areas && diagram.areas.length > 0) {
-                console.log('[BackendStorageProvider] Saving', diagram.areas.length, 'areas');
+                console.log(
+                    '[BackendStorageProvider] Saving',
+                    diagram.areas.length,
+                    'areas'
+                );
                 for (const area of diagram.areas) {
                     try {
                         await diagramsApi.createArea(diagramId, area);
-                        console.log('[BackendStorageProvider] Area saved:', area.name);
+                        console.log(
+                            '[BackendStorageProvider] Area saved:',
+                            area.name
+                        );
                     } catch (e) {
-                        console.error('[BackendStorageProvider] Failed to save area:', area.name, e);
+                        console.error(
+                            '[BackendStorageProvider] Failed to save area:',
+                            area.name,
+                            e
+                        );
                     }
                 }
             }
 
             // Save custom types
             if (diagram.customTypes && diagram.customTypes.length > 0) {
-                console.log('[BackendStorageProvider] Saving', diagram.customTypes.length, 'custom types');
+                console.log(
+                    '[BackendStorageProvider] Saving',
+                    diagram.customTypes.length,
+                    'custom types'
+                );
                 for (const customType of diagram.customTypes) {
                     try {
-                        await diagramsApi.createCustomType(diagramId, customType);
-                        console.log('[BackendStorageProvider] Custom type saved:', customType.name);
+                        await diagramsApi.createCustomType(
+                            diagramId,
+                            customType
+                        );
+                        console.log(
+                            '[BackendStorageProvider] Custom type saved:',
+                            customType.name
+                        );
                     } catch (e) {
-                        console.error('[BackendStorageProvider] Failed to save custom type:', customType.name, e);
+                        console.error(
+                            '[BackendStorageProvider] Failed to save custom type:',
+                            customType.name,
+                            e
+                        );
                     }
                 }
             }
 
             // Save notes
             if (diagram.notes && diagram.notes.length > 0) {
-                console.log('[BackendStorageProvider] Saving', diagram.notes.length, 'notes');
+                console.log(
+                    '[BackendStorageProvider] Saving',
+                    diagram.notes.length,
+                    'notes'
+                );
                 for (const note of diagram.notes) {
                     try {
                         await diagramsApi.createNote(diagramId, note);
-                        console.log('[BackendStorageProvider] Note saved:', note.id);
+                        console.log(
+                            '[BackendStorageProvider] Note saved:',
+                            note.id
+                        );
                     } catch (e) {
-                        console.error('[BackendStorageProvider] Failed to save note:', note.id, e);
+                        console.error(
+                            '[BackendStorageProvider] Failed to save note:',
+                            note.id,
+                            e
+                        );
                     }
                 }
             }
 
             // Save dependencies
             if (diagram.dependencies && diagram.dependencies.length > 0) {
-                console.log('[BackendStorageProvider] Saving', diagram.dependencies.length, 'dependencies');
+                console.log(
+                    '[BackendStorageProvider] Saving',
+                    diagram.dependencies.length,
+                    'dependencies'
+                );
                 for (const dep of diagram.dependencies) {
                     try {
                         await diagramsApi.createDependency(diagramId, dep);
-                        console.log('[BackendStorageProvider] Dependency saved:', dep.id);
+                        console.log(
+                            '[BackendStorageProvider] Dependency saved:',
+                            dep.id
+                        );
                     } catch (e) {
-                        console.error('[BackendStorageProvider] Failed to save dependency:', dep.id, e);
+                        console.error(
+                            '[BackendStorageProvider] Failed to save dependency:',
+                            dep.id,
+                            e
+                        );
                     }
                 }
             }
@@ -228,7 +309,7 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
     );
 
     const listDiagrams: StorageContext['listDiagrams'] = useCallback(
-        async (options = {}) => {
+        async (_options = {}) => {
             if (!isAuthenticated()) return [];
 
             try {
@@ -257,32 +338,56 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
     );
 
     const getDiagram: StorageContext['getDiagram'] = useCallback(
-        async (id: string, options = {}) => {
-            console.log('[BackendStorageProvider] getDiagram called with id:', id);
-            console.log('[BackendStorageProvider] isAuthenticated:', isAuthenticated());
-            
+        async (id: string, _options = {}) => {
+            console.log(
+                '[BackendStorageProvider] getDiagram called with id:',
+                id
+            );
+            console.log(
+                '[BackendStorageProvider] isAuthenticated:',
+                isAuthenticated()
+            );
+
             if (!isAuthenticated()) {
-                console.log('[BackendStorageProvider] Not authenticated, returning undefined');
+                console.log(
+                    '[BackendStorageProvider] Not authenticated, returning undefined'
+                );
                 return undefined;
             }
 
             try {
-                console.log('[BackendStorageProvider] Fetching diagram from API...');
+                console.log(
+                    '[BackendStorageProvider] Fetching diagram from API...'
+                );
                 const diagram = await diagramsApi.getDiagram(id);
-                console.log('[BackendStorageProvider] Diagram fetched:', diagram);
+                console.log(
+                    '[BackendStorageProvider] Diagram fetched:',
+                    diagram
+                );
 
                 // Update cache
                 const diagramCache = ensureCache(id);
-                diagram.tables?.forEach((t) => diagramCache.tables.set(t.id, t));
-                diagram.relationships?.forEach((r) => diagramCache.relationships.set(r.id, r));
-                diagram.dependencies?.forEach((d) => diagramCache.dependencies.set(d.id, d));
+                diagram.tables?.forEach((t) =>
+                    diagramCache.tables.set(t.id, t)
+                );
+                diagram.relationships?.forEach((r) =>
+                    diagramCache.relationships.set(r.id, r)
+                );
+                diagram.dependencies?.forEach((d) =>
+                    diagramCache.dependencies.set(d.id, d)
+                );
                 diagram.areas?.forEach((a) => diagramCache.areas.set(a.id, a));
-                diagram.customTypes?.forEach((c) => diagramCache.customTypes.set(c.id, c));
+                diagram.customTypes?.forEach((c) =>
+                    diagramCache.customTypes.set(c.id, c)
+                );
                 diagram.notes?.forEach((n) => diagramCache.notes.set(n.id, n));
 
                 return diagram;
             } catch (e) {
-                console.error('[BackendStorageProvider] Failed to get diagram:', e);
+                console.error(
+                    '[BackendStorageProvider] Failed to get diagram:',
+                    e
+                );
                 return undefined;
             }
         },
@@ -306,37 +411,55 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
         []
     );
 
-    const deleteDiagram: StorageContext['deleteDiagram'] = useCallback(async (id: string) => {
-        if (!isAuthenticated()) return;
+    const deleteDiagram: StorageContext['deleteDiagram'] = useCallback(
+        async (id: string) => {
+            if (!isAuthenticated()) return;
 
-        try {
-            await diagramsApi.deleteDiagram(id);
-            delete cache[id];
-        } catch (e) {
-            console.error('Failed to delete diagram:', e);
-        }
-    }, []);
+            try {
+                await diagramsApi.deleteDiagram(id);
+                delete cache[id];
+            } catch (e) {
+                console.error('Failed to delete diagram:', e);
+            }
+        },
+        []
+    );
 
     // Table operations
     const addTable: StorageContext['addTable'] = useCallback(
         async ({ diagramId, table }) => {
-            console.log('[BackendStorageProvider] addTable called with diagramId:', diagramId, 'table:', table.name);
+            console.log(
+                '[BackendStorageProvider] addTable called with diagramId:',
+                diagramId,
+                'table:',
+                table.name
+            );
             if (!diagramId) {
-                console.error('[BackendStorageProvider] ERROR: addTable called with empty diagramId!');
+                console.error(
+                    '[BackendStorageProvider] ERROR: addTable called with empty diagramId!'
+                );
                 return;
             }
             if (!isAuthenticated()) {
-                console.log('[BackendStorageProvider] Not authenticated, skipping addTable');
+                console.log(
+                    '[BackendStorageProvider] Not authenticated, skipping addTable'
+                );
                 return;
             }
 
             try {
                 const created = await diagramsApi.createTable(diagramId, table);
-                console.log('[BackendStorageProvider] Table created successfully:', created.id);
+                console.log(
+                    '[BackendStorageProvider] Table created successfully:',
+                    created.id
+                );
                 const diagramCache = ensureCache(diagramId);
                 diagramCache.tables.set(created.id, created);
             } catch (e) {
-                console.error('[BackendStorageProvider] Failed to add table:', e);
+                console.error(
+                    '[BackendStorageProvider] Failed to add table:',
+                    e
+                );
             }
         },
         []
@@ -359,10 +482,14 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
                 if (diagramCache.tables.has(id)) {
                     try {
                         const table = diagramCache.tables.get(id)!;
-                        const updated = await diagramsApi.updateTable(diagramId, id, {
-                            ...table,
-                            ...attributes,
-                        });
+                        const updated = await diagramsApi.updateTable(
+                            diagramId,
+                            id,
+                            {
+                                ...table,
+                                ...attributes,
+                            }
+                        );
                         diagramCache.tables.set(id, updated);
                     } catch (e) {
                         console.error('Failed to update table:', e);
@@ -381,10 +508,17 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
             try {
                 const diagramCache = ensureCache(diagramId);
                 if (diagramCache.tables.has(table.id)) {
-                    const updated = await diagramsApi.updateTable(diagramId, table.id, table);
+                    const updated = await diagramsApi.updateTable(
+                        diagramId,
+                        table.id,
+                        table
+                    );
                     diagramCache.tables.set(table.id, updated);
                 } else {
-                    const created = await diagramsApi.createTable(diagramId, table);
+                    const created = await diagramsApi.createTable(
+                        diagramId,
+                        table
+                    );
                     diagramCache.tables.set(created.id, created);
                 }
             } catch (e) {
@@ -411,22 +545,25 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
         []
     );
 
-    const listTables: StorageContext['listTables'] = useCallback(async (diagramId: string) => {
-        if (!isAuthenticated()) return [];
-
-        try {
-            const tables = await diagramsApi.getTables(diagramId);
-            const diagramCache = ensureCache(diagramId);
-            tables.forEach((t) => diagramCache.tables.set(t.id, t));
-            return tables;
-        } catch (e) {
-            console.error('Failed to list tables:', e);
-            return [];
-        }
-    }, []);
-
-    const deleteDiagramTables: StorageContext['deleteDiagramTables'] = useCallback(
+    const listTables: StorageContext['listTables'] = useCallback(
         async (diagramId: string) => {
+            if (!isAuthenticated()) return [];
+
+            try {
+                const tables = await diagramsApi.getTables(diagramId);
+                const diagramCache = ensureCache(diagramId);
+                tables.forEach((t) => diagramCache.tables.set(t.id, t));
+                return tables;
+            } catch (e) {
+                console.error('Failed to list tables:', e);
+                return [];
+            }
+        },
+        []
+    );
+
+    const deleteDiagramTables: StorageContext['deleteDiagramTables'] =
+        useCallback(async (diagramId: string) => {
             const diagramCache = cache[diagramId];
             if (diagramCache) {
                 // Delete each table via API
@@ -439,9 +576,7 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
                 }
                 diagramCache.tables.clear();
             }
-        },
-        []
-    );
+        }, []);
 
     // Relationship operations
     const addRelationship: StorageContext['addRelationship'] = useCallback(
@@ -449,7 +584,10 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
             if (!isAuthenticated()) return;
 
             try {
-                const created = await diagramsApi.createRelationship(diagramId, relationship);
+                const created = await diagramsApi.createRelationship(
+                    diagramId,
+                    relationship
+                );
                 const diagramCache = ensureCache(diagramId);
                 diagramCache.relationships.set(created.id, created);
             } catch (e) {
@@ -467,18 +605,23 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
         []
     );
 
-    const updateRelationship: StorageContext['updateRelationship'] = useCallback(
-        async ({ id, attributes }) => {
+    const updateRelationship: StorageContext['updateRelationship'] =
+        useCallback(async ({ id, attributes }) => {
             if (!isAuthenticated()) return;
 
             for (const [diagramId, diagramCache] of Object.entries(cache)) {
                 if (diagramCache.relationships.has(id)) {
                     try {
-                        const relationship = diagramCache.relationships.get(id)!;
-                        const updated = await diagramsApi.updateRelationship(diagramId, id, {
-                            ...relationship,
-                            ...attributes,
-                        });
+                        const relationship =
+                            diagramCache.relationships.get(id)!;
+                        const updated = await diagramsApi.updateRelationship(
+                            diagramId,
+                            id,
+                            {
+                                ...relationship,
+                                ...attributes,
+                            }
+                        );
                         diagramCache.relationships.set(id, updated);
                     } catch (e) {
                         console.error('Failed to update relationship:', e);
@@ -486,12 +629,10 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
                     break;
                 }
             }
-        },
-        []
-    );
+        }, []);
 
-    const deleteRelationship: StorageContext['deleteRelationship'] = useCallback(
-        async ({ diagramId, id }) => {
+    const deleteRelationship: StorageContext['deleteRelationship'] =
+        useCallback(async ({ diagramId, id }) => {
             if (!isAuthenticated()) return;
 
             try {
@@ -503,18 +644,19 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
             } catch (e) {
                 console.error('Failed to delete relationship:', e);
             }
-        },
-        []
-    );
+        }, []);
 
     const listRelationships: StorageContext['listRelationships'] = useCallback(
         async (diagramId: string) => {
             if (!isAuthenticated()) return [];
 
             try {
-                const relationships = await diagramsApi.getRelationships(diagramId);
+                const relationships =
+                    await diagramsApi.getRelationships(diagramId);
                 const diagramCache = ensureCache(diagramId);
-                relationships.forEach((r) => diagramCache.relationships.set(r.id, r));
+                relationships.forEach((r) =>
+                    diagramCache.relationships.set(r.id, r)
+                );
                 return relationships;
             } catch (e) {
                 console.error('Failed to list relationships:', e);
@@ -524,8 +666,8 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
         []
     );
 
-    const deleteDiagramRelationships: StorageContext['deleteDiagramRelationships'] = useCallback(
-        async (diagramId: string) => {
+    const deleteDiagramRelationships: StorageContext['deleteDiagramRelationships'] =
+        useCallback(async (diagramId: string) => {
             const diagramCache = cache[diagramId];
             if (diagramCache) {
                 for (const id of diagramCache.relationships.keys()) {
@@ -537,9 +679,7 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
                 }
                 diagramCache.relationships.clear();
             }
-        },
-        []
-    );
+        }, []);
 
     // Dependency operations
     const addDependency: StorageContext['addDependency'] = useCallback(
@@ -547,7 +687,10 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
             if (!isAuthenticated()) return;
 
             try {
-                const created = await diagramsApi.createDependency(diagramId, dependency);
+                const created = await diagramsApi.createDependency(
+                    diagramId,
+                    dependency
+                );
                 const diagramCache = ensureCache(diagramId);
                 diagramCache.dependencies.set(created.id, created);
             } catch (e) {
@@ -573,10 +716,14 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
                 if (diagramCache.dependencies.has(id)) {
                     try {
                         const dependency = diagramCache.dependencies.get(id)!;
-                        const updated = await diagramsApi.updateDependency(diagramId, id, {
-                            ...dependency,
-                            ...attributes,
-                        });
+                        const updated = await diagramsApi.updateDependency(
+                            diagramId,
+                            id,
+                            {
+                                ...dependency,
+                                ...attributes,
+                            }
+                        );
                         diagramCache.dependencies.set(id, updated);
                     } catch (e) {
                         console.error('Failed to update dependency:', e);
@@ -610,9 +757,12 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
             if (!isAuthenticated()) return [];
 
             try {
-                const dependencies = await diagramsApi.getDependencies(diagramId);
+                const dependencies =
+                    await diagramsApi.getDependencies(diagramId);
                 const diagramCache = ensureCache(diagramId);
-                dependencies.forEach((d) => diagramCache.dependencies.set(d.id, d));
+                dependencies.forEach((d) =>
+                    diagramCache.dependencies.set(d.id, d)
+                );
                 return dependencies;
             } catch (e) {
                 console.error('Failed to list dependencies:', e);
@@ -622,8 +772,8 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
         []
     );
 
-    const deleteDiagramDependencies: StorageContext['deleteDiagramDependencies'] = useCallback(
-        async (diagramId: string) => {
+    const deleteDiagramDependencies: StorageContext['deleteDiagramDependencies'] =
+        useCallback(async (diagramId: string) => {
             const diagramCache = cache[diagramId];
             if (diagramCache) {
                 for (const id of diagramCache.dependencies.keys()) {
@@ -635,9 +785,7 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
                 }
                 diagramCache.dependencies.clear();
             }
-        },
-        []
-    );
+        }, []);
 
     // Area operations
     const addArea: StorageContext['addArea'] = useCallback(
@@ -655,30 +803,40 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
         []
     );
 
-    const getArea: StorageContext['getArea'] = useCallback(async ({ diagramId, id }) => {
-        const diagramCache = cache[diagramId];
-        return diagramCache?.areas.get(id);
-    }, []);
+    const getArea: StorageContext['getArea'] = useCallback(
+        async ({ diagramId, id }) => {
+            const diagramCache = cache[diagramId];
+            return diagramCache?.areas.get(id);
+        },
+        []
+    );
 
-    const updateArea: StorageContext['updateArea'] = useCallback(async ({ id, attributes }) => {
-        if (!isAuthenticated()) return;
+    const updateArea: StorageContext['updateArea'] = useCallback(
+        async ({ id, attributes }) => {
+            if (!isAuthenticated()) return;
 
-        for (const [diagramId, diagramCache] of Object.entries(cache)) {
-            if (diagramCache.areas.has(id)) {
-                try {
-                    const area = diagramCache.areas.get(id)!;
-                    const updated = await diagramsApi.updateArea(diagramId, id, {
-                        ...area,
-                        ...attributes,
-                    });
-                    diagramCache.areas.set(id, updated);
-                } catch (e) {
-                    console.error('Failed to update area:', e);
+            for (const [diagramId, diagramCache] of Object.entries(cache)) {
+                if (diagramCache.areas.has(id)) {
+                    try {
+                        const area = diagramCache.areas.get(id)!;
+                        const updated = await diagramsApi.updateArea(
+                            diagramId,
+                            id,
+                            {
+                                ...area,
+                                ...attributes,
+                            }
+                        );
+                        diagramCache.areas.set(id, updated);
+                    } catch (e) {
+                        console.error('Failed to update area:', e);
+                    }
+                    break;
                 }
-                break;
             }
-        }
-    }, []);
+        },
+        []
+    );
 
     const deleteArea: StorageContext['deleteArea'] = useCallback(
         async ({ diagramId, id }) => {
@@ -697,22 +855,25 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
         []
     );
 
-    const listAreas: StorageContext['listAreas'] = useCallback(async (diagramId: string) => {
-        if (!isAuthenticated()) return [];
-
-        try {
-            const areas = await diagramsApi.getAreas(diagramId);
-            const diagramCache = ensureCache(diagramId);
-            areas.forEach((a) => diagramCache.areas.set(a.id, a));
-            return areas;
-        } catch (e) {
-            console.error('Failed to list areas:', e);
-            return [];
-        }
-    }, []);
-
-    const deleteDiagramAreas: StorageContext['deleteDiagramAreas'] = useCallback(
+    const listAreas: StorageContext['listAreas'] = useCallback(
         async (diagramId: string) => {
+            if (!isAuthenticated()) return [];
+
+            try {
+                const areas = await diagramsApi.getAreas(diagramId);
+                const diagramCache = ensureCache(diagramId);
+                areas.forEach((a) => diagramCache.areas.set(a.id, a));
+                return areas;
+            } catch (e) {
+                console.error('Failed to list areas:', e);
+                return [];
+            }
+        },
+        []
+    );
+
+    const deleteDiagramAreas: StorageContext['deleteDiagramAreas'] =
+        useCallback(async (diagramId: string) => {
             const diagramCache = cache[diagramId];
             if (diagramCache) {
                 for (const id of diagramCache.areas.keys()) {
@@ -724,9 +885,7 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
                 }
                 diagramCache.areas.clear();
             }
-        },
-        []
-    );
+        }, []);
 
     // Custom type operations
     const addCustomType: StorageContext['addCustomType'] = useCallback(
@@ -734,7 +893,10 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
             if (!isAuthenticated()) return;
 
             try {
-                const created = await diagramsApi.createCustomType(diagramId, customType);
+                const created = await diagramsApi.createCustomType(
+                    diagramId,
+                    customType
+                );
                 const diagramCache = ensureCache(diagramId);
                 diagramCache.customTypes.set(created.id, created);
             } catch (e) {
@@ -760,10 +922,14 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
                 if (diagramCache.customTypes.has(id)) {
                     try {
                         const customType = diagramCache.customTypes.get(id)!;
-                        const updated = await diagramsApi.updateCustomType(diagramId, id, {
-                            ...customType,
-                            ...attributes,
-                        });
+                        const updated = await diagramsApi.updateCustomType(
+                            diagramId,
+                            id,
+                            {
+                                ...customType,
+                                ...attributes,
+                            }
+                        );
                         diagramCache.customTypes.set(id, updated);
                     } catch (e) {
                         console.error('Failed to update custom type:', e);
@@ -799,7 +965,9 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
             try {
                 const customTypes = await diagramsApi.getCustomTypes(diagramId);
                 const diagramCache = ensureCache(diagramId);
-                customTypes.forEach((c) => diagramCache.customTypes.set(c.id, c));
+                customTypes.forEach((c) =>
+                    diagramCache.customTypes.set(c.id, c)
+                );
                 return customTypes;
             } catch (e) {
                 console.error('Failed to list custom types:', e);
@@ -809,8 +977,8 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
         []
     );
 
-    const deleteDiagramCustomTypes: StorageContext['deleteDiagramCustomTypes'] = useCallback(
-        async (diagramId: string) => {
+    const deleteDiagramCustomTypes: StorageContext['deleteDiagramCustomTypes'] =
+        useCallback(async (diagramId: string) => {
             const diagramCache = cache[diagramId];
             if (diagramCache) {
                 for (const id of diagramCache.customTypes.keys()) {
@@ -822,9 +990,7 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
                 }
                 diagramCache.customTypes.clear();
             }
-        },
-        []
-    );
+        }, []);
 
     // Note operations
     const addNote: StorageContext['addNote'] = useCallback(
@@ -842,30 +1008,40 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
         []
     );
 
-    const getNote: StorageContext['getNote'] = useCallback(async ({ diagramId, id }) => {
-        const diagramCache = cache[diagramId];
-        return diagramCache?.notes.get(id);
-    }, []);
+    const getNote: StorageContext['getNote'] = useCallback(
+        async ({ diagramId, id }) => {
+            const diagramCache = cache[diagramId];
+            return diagramCache?.notes.get(id);
+        },
+        []
+    );
 
-    const updateNote: StorageContext['updateNote'] = useCallback(async ({ id, attributes }) => {
-        if (!isAuthenticated()) return;
+    const updateNote: StorageContext['updateNote'] = useCallback(
+        async ({ id, attributes }) => {
+            if (!isAuthenticated()) return;
 
-        for (const [diagramId, diagramCache] of Object.entries(cache)) {
-            if (diagramCache.notes.has(id)) {
-                try {
-                    const note = diagramCache.notes.get(id)!;
-                    const updated = await diagramsApi.updateNote(diagramId, id, {
-                        ...note,
-                        ...attributes,
-                    });
-                    diagramCache.notes.set(id, updated);
-                } catch (e) {
-                    console.error('Failed to update note:', e);
+            for (const [diagramId, diagramCache] of Object.entries(cache)) {
+                if (diagramCache.notes.has(id)) {
+                    try {
+                        const note = diagramCache.notes.get(id)!;
+                        const updated = await diagramsApi.updateNote(
+                            diagramId,
+                            id,
+                            {
+                                ...note,
+                                ...attributes,
+                            }
+                        );
+                        diagramCache.notes.set(id, updated);
+                    } catch (e) {
+                        console.error('Failed to update note:', e);
+                    }
+                    break;
                 }
-                break;
             }
-        }
-    }, []);
+        },
+        []
+    );
 
     const deleteNote: StorageContext['deleteNote'] = useCallback(
         async ({ diagramId, id }) => {
@@ -884,22 +1060,25 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
         []
     );
 
-    const listNotes: StorageContext['listNotes'] = useCallback(async (diagramId: string) => {
-        if (!isAuthenticated()) return [];
-
-        try {
-            const notes = await diagramsApi.getNotes(diagramId);
-            const diagramCache = ensureCache(diagramId);
-            notes.forEach((n) => diagramCache.notes.set(n.id, n));
-            return notes;
-        } catch (e) {
-            console.error('Failed to list notes:', e);
-            return [];
-        }
-    }, []);
-
-    const deleteDiagramNotes: StorageContext['deleteDiagramNotes'] = useCallback(
+    const listNotes: StorageContext['listNotes'] = useCallback(
         async (diagramId: string) => {
+            if (!isAuthenticated()) return [];
+
+            try {
+                const notes = await diagramsApi.getNotes(diagramId);
+                const diagramCache = ensureCache(diagramId);
+                notes.forEach((n) => diagramCache.notes.set(n.id, n));
+                return notes;
+            } catch (e) {
+                console.error('Failed to list notes:', e);
+                return [];
+            }
+        },
+        []
+    );
+
+    const deleteDiagramNotes: StorageContext['deleteDiagramNotes'] =
+        useCallback(async (diagramId: string) => {
             const diagramCache = cache[diagramId];
             if (diagramCache) {
                 for (const id of diagramCache.notes.keys()) {
@@ -911,9 +1090,7 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
                 }
                 diagramCache.notes.clear();
             }
-        },
-        []
-    );
+        }, []);
 
     const value: StorageContext = {
         getConfig,
@@ -965,7 +1142,11 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
         deleteDiagramNotes,
     };
 
-    return <storageContext.Provider value={value}>{children}</storageContext.Provider>;
+    return (
+        <storageContext.Provider value={value}>
+            {children}
+        </storageContext.Provider>
+    );
 };
 
 export default BackendStorageProvider;
