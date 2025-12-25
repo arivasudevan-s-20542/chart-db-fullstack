@@ -23,6 +23,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -86,7 +87,23 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // Use allowedOriginPatterns instead of allowedOrigins for better flexibility with credentials
-        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "http://127.0.0.1:*", "http://192.168.*.*:*"));
+        // Allow all origins patterns for flexibility - restrict in production via environment variable
+        List<String> patterns = new ArrayList<>(Arrays.asList(
+            "http://localhost:*", 
+            "http://127.0.0.1:*", 
+            "http://192.168.*.*:*",
+            "http://62.84.186.161:*",
+            "https://62.84.186.161:*"
+        ));
+        // Add configured origins
+        if (allowedOrigins != null) {
+            for (String origin : allowedOrigins) {
+                if (!patterns.contains(origin)) {
+                    patterns.add(origin);
+                }
+            }
+        }
+        configuration.setAllowedOriginPatterns(patterns);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
