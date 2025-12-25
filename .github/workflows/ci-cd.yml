@@ -190,6 +190,9 @@ jobs:
         env:
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
           GHCR_USER: ${{ github.actor }}
+          # Database Credentials
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
           # OAuth2 Provider Credentials
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
@@ -201,15 +204,19 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
-          envs: GHCR_TOKEN,GHCR_USER,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,OAUTH_GITHUB_CLIENT_ID,OAUTH_GITHUB_CLIENT_SECRET,ZOHO_CLIENT_ID,ZOHO_CLIENT_SECRET
+          envs: GHCR_TOKEN,GHCR_USER,POSTGRES_PASSWORD,JWT_SECRET,GOOGLE_CLIENT_ID,GOOGLE_CLIENT_SECRET,OAUTH_GITHUB_CLIENT_ID,OAUTH_GITHUB_CLIENT_SECRET,ZOHO_CLIENT_ID,ZOHO_CLIENT_SECRET
           script: |
             cd ~/chartdb
             
             # Login to GitHub Container Registry
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             
-            # Set OAuth2 environment variables in .env file
-            cat > .env.oauth2 << EOF
+            # Create .env file with all required secrets
+            cat > .env << EOF
+            # Database Configuration
+            POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+            JWT_SECRET=${JWT_SECRET}
+            # OAuth2 Social Login
             GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
             GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
             GITHUB_CLIENT_ID=${OAUTH_GITHUB_CLIENT_ID}
@@ -221,8 +228,8 @@ jobs:
             # Pull latest images
             docker compose -f docker-compose.prod.yml pull
             
-            # Restart services with OAuth2 env vars
-            docker compose -f docker-compose.prod.yml --env-file .env.oauth2 up -d
+            # Restart services
+            docker compose -f docker-compose.prod.yml up -d
             
             # Clean up old images
             docker image prune -f
