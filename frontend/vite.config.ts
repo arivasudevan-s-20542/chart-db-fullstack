@@ -14,14 +14,6 @@ const getGitCommit = () => {
     }
 };
 
-const getGitCommitShort = () => {
-    try {
-        return execSync('git rev-parse --short HEAD').toString().trim();
-    } catch {
-        return 'unknown';
-    }
-};
-
 // https://vitejs.dev/config/
 export default defineConfig({
     define: {
