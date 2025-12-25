@@ -102,3 +102,4 @@ See [.env.example](.env.example) for all available configuration options.
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) for details.
+
