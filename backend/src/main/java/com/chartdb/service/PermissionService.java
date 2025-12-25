@@ -123,6 +123,29 @@ public class PermissionService {
         log.info("Permission removed from diagram {} for user {} by {}", diagramId, targetUserId, userId);
     }
     
+    @Transactional
+    public PermissionResponse updatePermission(String diagramId, String userId, String targetUserId, PermissionLevel newLevel) {
+        Diagram diagram = diagramRepository.findById(diagramId)
+            .orElseThrow(() -> new ResourceNotFoundException("Diagram", "id", diagramId));
+        
+        if (!diagram.getOwner().getId().equals(userId)) {
+            throw new AccessDeniedException("Only the owner can update permissions");
+        }
+        
+        if (targetUserId.equals(diagram.getOwner().getId())) {
+            throw new BadRequestException("Cannot change owner permission");
+        }
+        
+        DiagramPermission permission = permissionRepository.findByDiagramIdAndUserId(diagramId, targetUserId)
+            .orElseThrow(() -> new ResourceNotFoundException("Permission", "userId", targetUserId));
+        
+        permission.setPermissionLevel(newLevel);
+        permission = permissionRepository.save(permission);
+        log.info("Permission updated for user {} on diagram {} to {} by {}", targetUserId, diagramId, newLevel, userId);
+        
+        return permissionMapper.toResponse(permission);
+    }
+    
     @Transactional(readOnly = true)
     public boolean hasPermission(String diagramId, String userId, PermissionLevel minimumLevel) {
         return permissionRepository.findByDiagramIdAndUserId(diagramId, userId)

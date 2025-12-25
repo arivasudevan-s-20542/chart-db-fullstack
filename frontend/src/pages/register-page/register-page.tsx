@@ -5,6 +5,7 @@ import { Button } from '@/components/button/button';
 import { Input } from '@/components/input/input';
 import { Label } from '@/components/label/label';
 import { Spinner } from '@/components/spinner/spinner';
+import { SocialLoginButtons } from '@/components/social-login-buttons';
 import { DatabaseType } from '@/lib/domain/database-type';
 import { DiagramIcon } from '@/components/diagram-icon/diagram-icon';
 
@@ -172,6 +173,19 @@ export const RegisterPage: React.FC = () => {
                         )}
                     </Button>
                 </form>
+
+                <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-card px-2 text-muted-foreground">
+                            Or sign up with
+                        </span>
+                    </div>
+                </div>
+
+                <SocialLoginButtons disabled={isLoading} />
 
                 <div className="text-center text-sm">
                     Already have an account?{' '}

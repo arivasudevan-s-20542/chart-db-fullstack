@@ -1,5 +1,6 @@
 package com.chartdb.controller;
 
+import com.chartdb.config.OAuth2Config;
 import com.chartdb.dto.request.LoginRequest;
 import com.chartdb.dto.request.RefreshTokenRequest;
 import com.chartdb.dto.request.RegisterRequest;
@@ -15,12 +16,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
     
     private final AuthService authService;
+    private final OAuth2Config oAuth2Config;
     
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {
@@ -52,5 +56,15 @@ public class AuthController {
         // Client-side logout (invalidate token on client)
         // In production, you might add the token to a blacklist
         return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));
+    }
+    
+    /**
+     * Get OAuth2 provider availability status
+     * This endpoint is public and returns which OAuth2 providers are configured
+     */
+    @GetMapping("/oauth2/providers")
+    public ResponseEntity<ApiResponse<Map<String, Boolean>>> getOAuth2Providers() {
+        Map<String, Boolean> providers = oAuth2Config.getAvailableProviders();
+        return ResponseEntity.ok(ApiResponse.success(providers));
     }
 }

@@ -139,6 +139,7 @@ public class TableService {
         if (request.getColor() != null) table.setColor(request.getColor());
         if (request.getIsCollapsed() != null) table.setIsCollapsed(request.getIsCollapsed());
         if (request.getIsHidden() != null) table.setIsHidden(request.getIsHidden());
+        if (request.getSortOrder() != null) table.setSortOrder(request.getSortOrder());
         if (request.getZIndex() != null) table.setZIndex(request.getZIndex());
         if (request.getIsView() != null) table.setIsView(request.getIsView());
         if (request.getIsMaterializedView() != null) table.setIsMaterializedView(request.getIsMaterializedView());

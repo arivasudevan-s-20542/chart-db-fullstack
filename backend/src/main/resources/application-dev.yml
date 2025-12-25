@@ -53,4 +53,4 @@ logging:
     com.chartdb: DEBUG
     org.springframework.security: DEBUG
     org.springframework.websocket: DEBUG
-    org.hibernate.SQL: DEBUG
+    org.hibernate.SQL: WARN

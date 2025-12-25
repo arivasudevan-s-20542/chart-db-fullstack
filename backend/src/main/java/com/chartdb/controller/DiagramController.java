@@ -3,6 +3,7 @@ package com.chartdb.controller;
 import com.chartdb.dto.request.CreateDiagramRequest;
 import com.chartdb.dto.request.ShareDiagramRequest;
 import com.chartdb.dto.request.UpdateDiagramRequest;
+import com.chartdb.dto.request.UpdatePermissionRequest;
 import com.chartdb.dto.response.*;
 import com.chartdb.security.CurrentUser;
 import com.chartdb.security.UserPrincipal;
@@ -105,6 +106,16 @@ public class DiagramController {
             @PathVariable String diagramId) {
         List<PermissionResponse> response = permissionService.getDiagramPermissions(diagramId, currentUser.getId());
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+    
+    @PutMapping("/{diagramId}/permissions/{userId}")
+    public ResponseEntity<ApiResponse<PermissionResponse>> updatePermission(
+            @CurrentUser UserPrincipal currentUser,
+            @PathVariable String diagramId,
+            @PathVariable String userId,
+            @Valid @RequestBody UpdatePermissionRequest request) {
+        PermissionResponse response = permissionService.updatePermission(diagramId, currentUser.getId(), userId, request.getPermissionLevel());
+        return ResponseEntity.ok(ApiResponse.success("Permission updated", response));
     }
     
     @DeleteMapping("/{diagramId}/permissions/{userId}")

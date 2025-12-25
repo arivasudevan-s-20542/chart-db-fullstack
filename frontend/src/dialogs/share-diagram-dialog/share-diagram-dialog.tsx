@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
     Dialog,
+    DialogClose,
     DialogContent,
     DialogHeader,
     DialogTitle,
@@ -28,6 +29,7 @@ import {
     Crown,
     Copy,
     Check,
+    X,
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/avatar/avatar';
 import { Badge } from '@/components/badge/badge';
@@ -124,6 +126,38 @@ export const ShareDiagramDialog: React.FC<ShareDiagramDialogProps> = ({
         [diagramId, toast]
     );
 
+    const handlePermissionChange = useCallback(
+        async (userId: string, newPermission: Permission) => {
+            if (!diagramId) return;
+
+            try {
+                await diagramsApi.updatePermission(
+                    diagramId,
+                    userId,
+                    newPermission
+                );
+                toast({
+                    title: 'Permission updated',
+                    description: `Permission changed to ${getPermissionLabel(newPermission)}`,
+                });
+                loadCollaborators();
+            } catch (error: any) {
+                toast({
+                    title: 'Failed to update permission',
+                    description: error.message || 'Could not update permission',
+                    variant: 'destructive',
+                });
+            }
+        },
+        [diagramId, toast]
+    );
+
+    const handleClose = useCallback(() => {
+        setEmail('');
+        setPermission('EDIT');
+        dialog.onOpenChange?.(false);
+    }, [dialog]);
+
     const handleCopyLink = useCallback(() => {
         const url = `${window.location.origin}/diagrams/${diagramId}`;
         navigator.clipboard.writeText(url);
@@ -172,6 +206,13 @@ export const ShareDiagramDialog: React.FC<ShareDiagramDialogProps> = ({
             }}
         >
             <DialogContent className="sm:max-w-md">
+                <DialogClose
+                    className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"
+                    onClick={handleClose}
+                >
+                    <X className="size-4" />
+                    <span className="sr-only">Close</span>
+                </DialogClose>
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Users className="size-5" />
@@ -300,11 +341,32 @@ export const ShareDiagramDialog: React.FC<ShareDiagramDialogProps> = ({
                                                 </Badge>
                                             ) : (
                                                 <>
-                                                    <Badge variant="outline">
-                                                        {getPermissionLabel(
+                                                    <Select
+                                                        value={
                                                             collab.permission
-                                                        )}
-                                                    </Badge>
+                                                        }
+                                                        onValueChange={(v) =>
+                                                            handlePermissionChange(
+                                                                collab.userId,
+                                                                v as Permission
+                                                            )
+                                                        }
+                                                    >
+                                                        <SelectTrigger className="h-8 w-24">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="VIEW">
+                                                                View
+                                                            </SelectItem>
+                                                            <SelectItem value="EDIT">
+                                                                Edit
+                                                            </SelectItem>
+                                                            <SelectItem value="ADMIN">
+                                                                Admin
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
@@ -329,10 +391,7 @@ export const ShareDiagramDialog: React.FC<ShareDiagramDialogProps> = ({
                 </div>
 
                 <DialogFooter>
-                    <Button
-                        variant="outline"
-                        onClick={() => dialog.onOpenChange?.(false)}
-                    >
+                    <Button variant="outline" onClick={handleClose}>
                         Done
                     </Button>
                 </DialogFooter>

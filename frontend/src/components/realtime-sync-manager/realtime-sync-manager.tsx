@@ -25,6 +25,9 @@ export const RealtimeSyncManager: React.FC = () => {
         addField,
         updateField,
         removeField,
+        addIndex,
+        updateIndex,
+        removeIndex,
         addRelationship,
         updateRelationship,
         removeRelationship,
@@ -106,11 +109,45 @@ export const RealtimeSyncManager: React.FC = () => {
                     };
                     break;
 
+                case 'update_field':
+                    wsEventType = 'COLUMN_UPDATED';
+                    payload = {
+                        tableId: event.data.tableId,
+                        fieldId: event.data.fieldId,
+                        field: event.data.field,
+                    };
+                    break;
+
                 case 'remove_field':
                     wsEventType = 'COLUMN_DELETED';
                     payload = {
                         tableId: event.data.tableId,
                         fieldId: event.data.fieldId,
+                    };
+                    break;
+
+                case 'add_index':
+                    wsEventType = 'INDEX_CREATED';
+                    payload = {
+                        tableId: event.data.tableId,
+                        index: event.data.index,
+                    };
+                    break;
+
+                case 'remove_index':
+                    wsEventType = 'INDEX_DELETED';
+                    payload = {
+                        tableId: event.data.tableId,
+                        indexId: event.data.indexId,
+                    };
+                    break;
+
+                case 'update_index':
+                    wsEventType = 'INDEX_UPDATED';
+                    payload = {
+                        tableId: event.data.tableId,
+                        indexId: event.data.indexId,
+                        index: event.data.index,
                     };
                     break;
 
@@ -272,12 +309,12 @@ export const RealtimeSyncManager: React.FC = () => {
                         if (
                             event.payload?.tableId &&
                             event.payload?.fieldId &&
-                            event.payload?.changes
+                            event.payload?.field
                         ) {
                             await updateField(
                                 event.payload.tableId,
                                 event.payload.fieldId,
-                                event.payload.changes,
+                                event.payload.field,
                                 { updateHistory: false }
                             );
                         }
@@ -288,6 +325,45 @@ export const RealtimeSyncManager: React.FC = () => {
                             await removeField(
                                 event.payload.tableId,
                                 event.payload.fieldId,
+                                {
+                                    updateHistory: false,
+                                }
+                            );
+                        }
+                        break;
+
+                    case 'INDEX_CREATED':
+                        if (event.payload?.tableId && event.payload?.index) {
+                            await addIndex(
+                                event.payload.tableId,
+                                event.payload.index,
+                                {
+                                    updateHistory: false,
+                                }
+                            );
+                        }
+                        break;
+
+                    case 'INDEX_UPDATED':
+                        if (
+                            event.payload?.tableId &&
+                            event.payload?.indexId &&
+                            event.payload?.index
+                        ) {
+                            await updateIndex(
+                                event.payload.tableId,
+                                event.payload.indexId,
+                                event.payload.index,
+                                { updateHistory: false }
+                            );
+                        }
+                        break;
+
+                    case 'INDEX_DELETED':
+                        if (event.payload?.tableId && event.payload?.indexId) {
+                            await removeIndex(
+                                event.payload.tableId,
+                                event.payload.indexId,
                                 {
                                     updateHistory: false,
                                 }

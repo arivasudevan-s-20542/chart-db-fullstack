@@ -6,7 +6,7 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from '@/components/tooltip/tooltip';
-import { Wifi, WifiOff, Users } from 'lucide-react';
+import { Wifi, WifiOff, Users, Activity } from 'lucide-react';
 
 // Generate a consistent color from a string
 const stringToColor = (str: string) => {
@@ -18,8 +18,16 @@ const stringToColor = (str: string) => {
     return `hsl(${hue}, 70%, 50%)`;
 };
 
+// Get latency color based on value
+const getLatencyColor = (latency: number) => {
+    if (latency < 0) return 'text-muted-foreground';
+    if (latency < 100) return 'text-green-500';
+    if (latency < 300) return 'text-yellow-500';
+    return 'text-red-500';
+};
+
 export const CollaborationIndicator: React.FC = () => {
-    const { isConnected, isConnecting, activeUsers, currentDiagramId } =
+    const { isConnected, isConnecting, activeUsers, currentDiagramId, latency } =
         useCollaboration();
 
     // Don't show if not in a diagram session
@@ -50,6 +58,32 @@ export const CollaborationIndicator: React.FC = () => {
                           : 'Not connected'}
                 </TooltipContent>
             </Tooltip>
+
+            {/* Latency indicator */}
+            {isConnected && latency >= 0 && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div className={`flex items-center gap-1 ${getLatencyColor(latency)}`}>
+                            <Activity className="size-3" />
+                            <span className="text-xs font-medium tabular-nums">
+                                {latency}ms
+                            </span>
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <div className="text-sm">
+                            <div className="font-medium">Server Latency</div>
+                            <div className="text-xs text-muted-foreground">
+                                {latency < 100
+                                    ? 'Excellent connection'
+                                    : latency < 300
+                                      ? 'Good connection'
+                                      : 'High latency'}
+                            </div>
+                        </div>
+                    </TooltipContent>
+                </Tooltip>
+            )}
 
             {/* Active users */}
             {activeUsers.length > 0 && (

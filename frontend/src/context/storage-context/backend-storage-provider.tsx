@@ -31,8 +31,9 @@ const FILTER_KEY_PREFIX = 'chartdb_filter_';
 export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
     children,
 }) => {
-    // In-memory cache
-    const cache: DiagramCache = {};
+    // In-memory cache - use useRef to persist across renders
+    const cacheRef = React.useRef<DiagramCache>({});
+    const cache = cacheRef.current;
 
     const ensureCache = (diagramId: string) => {
         if (!cache[diagramId]) {
@@ -475,13 +476,28 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
 
     const updateTable: StorageContext['updateTable'] = useCallback(
         async ({ id, attributes }) => {
-            if (!isAuthenticated()) return;
+            console.log('[BackendStorageProvider] updateTable called:', {
+                id,
+                attributes,
+            });
+            if (!isAuthenticated()) {
+                console.log(
+                    '[BackendStorageProvider] Not authenticated, skipping'
+                );
+                return;
+            }
 
             // Find diagram ID from cache
+            let found = false;
             for (const [diagramId, diagramCache] of Object.entries(cache)) {
                 if (diagramCache.tables.has(id)) {
+                    found = true;
                     try {
                         const table = diagramCache.tables.get(id)!;
+                        console.log(
+                            '[BackendStorageProvider] Found table in cache:',
+                            { diagramId, table, attributes }
+                        );
                         const updated = await diagramsApi.updateTable(
                             diagramId,
                             id,
@@ -490,12 +506,22 @@ export const BackendStorageProvider: React.FC<React.PropsWithChildren> = ({
                                 ...attributes,
                             }
                         );
+                        console.log(
+                            '[BackendStorageProvider] Table updated successfully:',
+                            updated
+                        );
                         diagramCache.tables.set(id, updated);
                     } catch (e) {
                         console.error('Failed to update table:', e);
                     }
                     break;
                 }
+            }
+            if (!found) {
+                console.warn(
+                    '[BackendStorageProvider] Table not found in cache:',
+                    id
+                );
             }
         },
         []

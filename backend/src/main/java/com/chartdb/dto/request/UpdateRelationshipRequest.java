@@ -26,4 +26,9 @@ public class UpdateRelationshipRequest {
     private String targetHandle;
     
     private List<Map<String, Object>> pathPoints;
+    
+    // Cardinality fields
+    private String sourceCardinality;
+    
+    private String targetCardinality;
 }

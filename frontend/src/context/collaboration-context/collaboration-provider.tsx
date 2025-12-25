@@ -22,6 +22,7 @@ export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({
     const { isAuthenticated } = useAuth();
     const [isConnected, setIsConnected] = useState(false);
     const [isConnecting, setIsConnecting] = useState(false);
+    const [latency, setLatency] = useState<number>(-1);
     const [activeUsers, setActiveUsers] = useState<UserPresence[]>([]);
     const [currentDiagramId, setCurrentDiagramId] = useState<string | null>(
         null
@@ -31,6 +32,11 @@ export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({
     const eventListenersRef = useRef<
         Map<DiagramEventType | '*', Set<(event: DiagramEvent) => void>>
     >(new Map());
+
+    // Handle latency updates
+    const handleLatencyUpdate = useCallback((newLatency: number) => {
+        setLatency(newLatency);
+    }, []);
 
     // Handle presence updates
     const handlePresenceUpdate = useCallback(
@@ -64,12 +70,14 @@ export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({
     useEffect(() => {
         wsService.addPresenceListener(handlePresenceUpdate);
         wsService.addEventListener('*', handleDiagramEvent);
+        wsService.addLatencyListener(handleLatencyUpdate);
 
         return () => {
             wsService.removePresenceListener(handlePresenceUpdate);
             wsService.removeEventListener('*', handleDiagramEvent);
+            wsService.removeLatencyListener(handleLatencyUpdate);
         };
-    }, [handlePresenceUpdate, handleDiagramEvent]);
+    }, [handlePresenceUpdate, handleDiagramEvent, handleLatencyUpdate]);
 
     // Update connection state and handle reconnection
     useEffect(() => {
@@ -260,6 +268,7 @@ export const CollaborationProvider: React.FC<CollaborationProviderProps> = ({
     const value: CollaborationContextValue = {
         isConnected,
         isConnecting,
+        latency,
         activeUsers,
         currentDiagramId,
         joinDiagram,

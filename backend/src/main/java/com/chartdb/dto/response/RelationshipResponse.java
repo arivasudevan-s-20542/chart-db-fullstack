@@ -38,6 +38,10 @@ public class RelationshipResponse {
     private String targetHandle;
     private List<Map<String, Object>> pathPoints;
     
+    // Cardinality
+    private String sourceCardinality;
+    private String targetCardinality;
+    
     // Timestamps
     private Instant createdAt;
     private Instant updatedAt;

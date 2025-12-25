@@ -379,6 +379,17 @@ public class DiagramWebSocketHandler {
     }
     
     // ═══════════════════════════════════════════════════════════════
+    // PING/PONG (Latency Measurement)
+    // ═══════════════════════════════════════════════════════════════
+    
+    @MessageMapping("/ping")
+    @SendToUser("/queue/pong")
+    public java.util.Map<String, String> handlePing(@Payload java.util.Map<String, String> payload) {
+        // Simply echo back the pingId so the client can calculate round-trip latency
+        return java.util.Map.of("pingId", payload.getOrDefault("pingId", ""));
+    }
+    
+    // ═══════════════════════════════════════════════════════════════
     // HELPER METHODS
     // ═══════════════════════════════════════════════════════════════
     

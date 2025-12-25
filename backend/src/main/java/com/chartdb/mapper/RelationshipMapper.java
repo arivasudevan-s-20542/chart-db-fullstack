@@ -39,6 +39,8 @@ public interface RelationshipMapper {
     @Mapping(target = "targetTableName", source = "targetTable.name")
     @Mapping(target = "targetColumnId", source = "targetColumn.id")
     @Mapping(target = "targetColumnName", source = "targetColumn.name")
+    @Mapping(target = "sourceCardinality", source = "cardinalitySource")
+    @Mapping(target = "targetCardinality", source = "cardinalityTarget")
     RelationshipResponse toResponse(Relationship relationship);
     
     List<RelationshipResponse> toResponseList(List<Relationship> relationships);

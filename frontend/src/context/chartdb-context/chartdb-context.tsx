@@ -19,7 +19,11 @@ export type ChartDBEventType =
     | 'update_table'
     | 'remove_tables'
     | 'add_field'
+    | 'update_field'
     | 'remove_field'
+    | 'add_index'
+    | 'update_index'
+    | 'remove_index'
     | 'load_diagram'
     | 'add_relationship'
     | 'remove_relationship'
@@ -56,9 +60,30 @@ export type AddFieldEvent = ChartDBEventBase<
     { tableId: string; field: DBField; fields: DBField[] }
 >;
 
+export type UpdateFieldEvent = ChartDBEventBase<
+    'update_field',
+    { tableId: string; fieldId: string; field: Partial<DBField> }
+>;
+
 export type RemoveFieldEvent = ChartDBEventBase<
     'remove_field',
     { tableId: string; fieldId: string; fields: DBField[] }
+>;
+
+// Index events
+export type AddIndexEvent = ChartDBEventBase<
+    'add_index',
+    { tableId: string; index: DBIndex }
+>;
+
+export type UpdateIndexEvent = ChartDBEventBase<
+    'update_index',
+    { tableId: string; indexId: string; index: Partial<DBIndex> }
+>;
+
+export type RemoveIndexEvent = ChartDBEventBase<
+    'remove_index',
+    { tableId: string; indexId: string }
 >;
 
 export type LoadDiagramEvent = ChartDBEventBase<
@@ -113,7 +138,11 @@ export type ChartDBEvent =
     | UpdateTableEvent
     | RemoveTableEvent
     | AddFieldEvent
+    | UpdateFieldEvent
     | RemoveFieldEvent
+    | AddIndexEvent
+    | UpdateIndexEvent
+    | RemoveIndexEvent
     | LoadDiagramEvent
     | AddRelationshipEvent
     | RemoveRelationshipEvent

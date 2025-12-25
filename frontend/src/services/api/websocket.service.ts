@@ -11,6 +11,9 @@ export type DiagramEventType =
     | 'COLUMN_CREATED'
     | 'COLUMN_UPDATED'
     | 'COLUMN_DELETED'
+    | 'INDEX_CREATED'
+    | 'INDEX_UPDATED'
+    | 'INDEX_DELETED'
     | 'RELATIONSHIP_CREATED'
     | 'RELATIONSHIP_UPDATED'
     | 'RELATIONSHIP_DELETED'
@@ -55,13 +58,18 @@ export interface CollaborationSession {
 
 type EventCallback = (event: DiagramEvent) => void;
 type PresenceCallback = (session: CollaborationSession) => void;
+type LatencyCallback = (latency: number) => void;
 
 class WebSocketService {
     private client: Client | null = null;
     private subscriptions: Map<string, StompSubscription> = new Map();
     private eventListeners: Map<string, Set<EventCallback>> = new Map();
     private presenceListeners: Set<PresenceCallback> = new Set();
+    private latencyListeners: Set<LatencyCallback> = new Set();
     private currentDiagramId: string | null = null;
+    private latencyInterval: ReturnType<typeof setInterval> | null = null;
+    private currentLatency: number = -1;
+    private pendingPings: Map<string, number> = new Map();
     private reconnectAttempts = 0;
     private maxReconnectAttempts = 5;
     private reconnectDelay = 2000;
@@ -101,6 +109,9 @@ class WebSocketService {
                 console.log('[WebSocket] Connected successfully');
                 this.reconnectAttempts = 0;
 
+                // Subscribe to pong responses for latency measurement
+                this.subscribeToPong();
+
                 // Resubscribe to diagram if we were connected before
                 if (this.currentDiagramId) {
                     console.log(
@@ -109,6 +120,9 @@ class WebSocketService {
                     );
                     this.subscribeToDiagram(this.currentDiagramId);
                 }
+
+                // Start latency measurement
+                this.startLatencyMeasurement();
 
                 resolve();
             };
@@ -152,15 +166,40 @@ class WebSocketService {
             this.leaveDiagram(this.currentDiagramId);
         }
 
+        this.stopLatencyMeasurement();
+
         this.subscriptions.forEach((sub) => sub.unsubscribe());
         this.subscriptions.clear();
         this.eventListeners.clear();
         this.presenceListeners.clear();
+        this.latencyListeners.clear();
 
         if (this.client) {
             this.client.deactivate();
             this.client = null;
         }
+    }
+
+    /**
+     * Subscribe to pong responses for latency measurement
+     */
+    private subscribeToPong(): void {
+        if (!this.client?.connected) return;
+
+        const pongSub = this.client.subscribe(
+            '/user/queue/pong',
+            (message) => {
+                try {
+                    const data = JSON.parse(message.body);
+                    if (data.pingId) {
+                        this.handlePong(data.pingId);
+                    }
+                } catch {
+                    // Ignore parse errors
+                }
+            }
+        );
+        this.subscriptions.set('pong', pongSub);
     }
 
     /**
@@ -412,6 +451,95 @@ class WebSocketService {
      */
     private notifyPresenceListeners(session: CollaborationSession): void {
         this.presenceListeners.forEach((callback) => callback(session));
+    }
+
+    /**
+     * Start latency measurement (ping every 5 seconds)
+     */
+    private startLatencyMeasurement(): void {
+        this.stopLatencyMeasurement();
+        this.measureLatency();
+        this.latencyInterval = setInterval(() => {
+            this.measureLatency();
+        }, 5000);
+    }
+
+    /**
+     * Stop latency measurement
+     */
+    private stopLatencyMeasurement(): void {
+        if (this.latencyInterval) {
+            clearInterval(this.latencyInterval);
+            this.latencyInterval = null;
+        }
+        this.currentLatency = -1;
+    }
+
+    /**
+     * Measure round-trip latency using WebSocket ping/pong
+     */
+    private measureLatency(): void {
+        if (!this.client?.connected || !this.currentDiagramId) {
+            return;
+        }
+
+        const pingId = Date.now().toString();
+        this.pendingPings.set(pingId, performance.now());
+
+        // Send ping via WebSocket
+        this.sendMessage(`/app/ping`, { pingId });
+
+        // Timeout - if no pong received in 5 seconds, consider it failed
+        setTimeout(() => {
+            if (this.pendingPings.has(pingId)) {
+                this.pendingPings.delete(pingId);
+            }
+        }, 5000);
+    }
+
+    /**
+     * Handle pong response from server
+     */
+    private handlePong(pingId: string): void {
+        const startTime = this.pendingPings.get(pingId);
+        if (startTime) {
+            const latency = Math.round(performance.now() - startTime);
+            this.currentLatency = latency;
+            this.pendingPings.delete(pingId);
+            this.notifyLatencyListeners(latency);
+        }
+    }
+
+    /**
+     * Notify latency listeners
+     */
+    private notifyLatencyListeners(latency: number): void {
+        this.latencyListeners.forEach((callback) => callback(latency));
+    }
+
+    /**
+     * Add latency listener
+     */
+    addLatencyListener(callback: LatencyCallback): void {
+        this.latencyListeners.add(callback);
+        // Immediately notify with current latency if available
+        if (this.currentLatency >= 0) {
+            callback(this.currentLatency);
+        }
+    }
+
+    /**
+     * Remove latency listener
+     */
+    removeLatencyListener(callback: LatencyCallback): void {
+        this.latencyListeners.delete(callback);
+    }
+
+    /**
+     * Get current latency
+     */
+    getLatency(): number {
+        return this.currentLatency;
     }
 
     /**

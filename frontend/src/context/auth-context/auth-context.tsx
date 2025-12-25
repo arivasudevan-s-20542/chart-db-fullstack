@@ -19,6 +19,8 @@ export interface AuthContextValue {
     logout: () => void;
     refreshUser: () => Promise<void>;
     clearError: () => void;
+    // OAuth2 token handler
+    setAuthTokens: (accessToken: string, refreshToken: string) => Promise<void>;
 }
 
 export const authContext = createContext<AuthContextValue>({
@@ -31,6 +33,7 @@ export const authContext = createContext<AuthContextValue>({
     logout: () => {},
     refreshUser: async () => {},
     clearError: () => {},
+    setAuthTokens: async () => {},
 });
 
 export default authContext;

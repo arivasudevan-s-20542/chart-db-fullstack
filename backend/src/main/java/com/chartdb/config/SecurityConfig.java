@@ -3,10 +3,16 @@ package com.chartdb.config;
 import com.chartdb.security.CustomUserDetailsService;
 import com.chartdb.security.JwtAuthenticationEntryPoint;
 import com.chartdb.security.JwtAuthenticationFilter;
+import com.chartdb.security.oauth2.CustomOAuth2UserService;
+import com.chartdb.security.oauth2.OAuth2AuthenticationFailureHandler;
+import com.chartdb.security.oauth2.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -27,18 +33,43 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
     
     private final CustomUserDetailsService customUserDetailsService;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final OAuth2Config oAuth2Config;
+    
+    // Lazy load OAuth2 components - they're only needed when OAuth2 is enabled
+    @Autowired(required = false)
+    @Lazy
+    private CustomOAuth2UserService customOAuth2UserService;
+    
+    @Autowired(required = false)
+    @Lazy
+    private OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    
+    @Autowired(required = false)
+    @Lazy
+    private OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
     
     @Value("${cors.allowed-origins:http://localhost:5173,http://localhost:3000}")
     private List<String> allowedOrigins;
+    
+    public SecurityConfig(
+            CustomUserDetailsService customUserDetailsService,
+            JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            OAuth2Config oAuth2Config) {
+        this.customUserDetailsService = customUserDetailsService;
+        this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.oAuth2Config = oAuth2Config;
+    }
     
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -69,13 +100,30 @@ public class SecurityConfig {
                 // Public endpoints
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/api/v1/health/**").permitAll()
                 .requestMatchers("/ws/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
+                // OAuth2 endpoints
+                .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                 // Swagger/OpenAPI
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
             );
+        
+        // Only configure OAuth2 login if at least one provider is configured
+        if (oAuth2Config.isOAuth2Enabled()) {
+            log.info("OAuth2 providers configured - enabling OAuth2 login");
+            http.oauth2Login(oauth2 -> oauth2
+                .authorizationEndpoint(auth -> auth.baseUri("/oauth2/authorize"))
+                .redirectionEndpoint(redirect -> redirect.baseUri("/login/oauth2/code/*"))
+                .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                .successHandler(oAuth2AuthenticationSuccessHandler)
+                .failureHandler(oAuth2AuthenticationFailureHandler)
+            );
+        } else {
+            log.info("No OAuth2 providers configured - OAuth2 login disabled");
+        }
         
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

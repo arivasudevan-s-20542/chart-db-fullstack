@@ -1,8 +1,6 @@
 package com.chartdb.config;
 
-import com.chartdb.security.JwtProvider;
 import com.chartdb.websocket.WebSocketAuthInterceptor;
-import com.chartdb.websocket.WebSocketEventListener;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;

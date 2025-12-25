@@ -532,22 +532,65 @@ export const diagramsApi = {
         diagramId: string,
         userId: string
     ): Promise<void> => {
-        await apiClient.delete(`/diagrams/${diagramId}/share/${userId}`);
+        await apiClient.delete(`/diagrams/${diagramId}/permissions/${userId}`);
     },
 
     /**
-     * Get list of collaborators for a diagram
+     * Update permission level for a user
+     */
+    updatePermission: async (
+        diagramId: string,
+        userId: string,
+        permission: 'VIEW' | 'EDIT' | 'ADMIN'
+    ): Promise<void> => {
+        const permissionMap: Record<string, string> = {
+            VIEW: 'VIEWER',
+            EDIT: 'EDITOR',
+            ADMIN: 'ADMIN',
+        };
+        await apiClient.put(`/diagrams/${diagramId}/permissions/${userId}`, {
+            permissionLevel: permissionMap[permission] || 'VIEWER',
+        });
+    },
+
+    /**
+     * Get list of users with permissions for a diagram
      */
     getCollaborators: async (diagramId: string): Promise<any[]> => {
         try {
             const response = await apiClient.get(
-                `/diagrams/${diagramId}/collaborators`
+                `/diagrams/${diagramId}/permissions`
             );
-            return unwrap<any[]>(response) || [];
+            const permissions = unwrap<any[]>(response) || [];
+            // Map PermissionResponse to Collaborator format expected by UI
+            return permissions.map((p: any) => ({
+                userId: p.userId || p.id,
+                email: p.userEmail || p.invitedEmail,
+                name: p.userDisplayName,
+                permission: mapPermissionLevel(p.permissionLevel),
+                isOwner: p.permissionLevel === 'OWNER',
+                avatarUrl: p.userAvatarUrl,
+                invitationStatus: p.invitationStatus,
+            }));
         } catch {
             return [];
         }
     },
+};
+
+// Map backend PermissionLevel to frontend Permission type
+const mapPermissionLevel = (level: string): 'VIEW' | 'EDIT' | 'ADMIN' => {
+    switch (level) {
+        case 'OWNER':
+        case 'ADMIN':
+            return 'ADMIN';
+        case 'EDITOR':
+            return 'EDIT';
+        case 'COMMENTER':
+        case 'VIEWER':
+        default:
+            return 'VIEW';
+    }
 };
 
 // ===================
@@ -558,17 +601,16 @@ export const diagramsApi = {
 const mapTableToBackend = (table: any) => ({
     id: table.id,
     name: table.name,
-    schemaName: table.schema,
+    schema: table.schema,
     positionX: table.x,
     positionY: table.y,
     color: table.color,
     isView: table.isView,
     isMaterializedView: table.isMaterializedView,
     width: table.width,
-    description: table.comments,
-    displayOrder: table.order,
-    expanded: table.expanded,
-    parentAreaId: table.parentAreaId,
+    comment: table.comments,
+    isCollapsed: table.expanded === false,
+    sortOrder: table.order,
     columns: table.fields?.map(mapColumnToBackend) || [],
     // Send indexes as JSON string for backend storage
     indexes: table.indexes ? JSON.stringify(table.indexes) : null,
@@ -596,9 +638,8 @@ const mapTableFromBackend = (dto: any) => ({
     isMaterializedView: dto.isMaterializedView,
     width: dto.width,
     comments: dto.description,
-    order: dto.displayOrder,
-    expanded: dto.expanded,
-    parentAreaId: dto.parentAreaId,
+    order: dto.sortOrder,
+    expanded: !dto.isCollapsed,
     createdAt: dto.createdAt ? new Date(dto.createdAt).getTime() : Date.now(),
     fields: dto.columns?.map(mapColumnFromBackend) || [],
     indexes: parseIndexes(dto.indexes),
@@ -609,18 +650,18 @@ const mapColumnToBackend = (field: any) => ({
     id: field.id,
     name: field.name,
     dataType: typeof field.type === 'object' ? field.type.id : field.type,
-    primaryKey: field.primaryKey,
-    unique: field.unique,
-    nullable: field.nullable,
-    autoIncrement: field.increment,
+    isPrimaryKey: field.primaryKey,
+    isUnique: field.unique,
+    isNullable: field.nullable,
+    isAutoIncrement: field.increment,
     isArray: field.isArray,
     maxLength: field.characterMaximumLength,
     precision: field.precision,
     scale: field.scale,
     defaultValue: field.default,
     collation: field.collation,
-    description: field.comments,
-    displayOrder: field.order,
+    comment: field.comments,
+    orderIndex: field.order,
 });
 
 // Map backend column to frontend field format
@@ -628,17 +669,18 @@ const mapColumnFromBackend = (dto: any) => ({
     id: dto.id,
     name: dto.name,
     type: { id: dto.dataType, name: dto.dataType },
-    primaryKey: dto.primaryKey || false,
-    unique: dto.unique || false,
-    nullable: dto.nullable ?? true,
-    increment: dto.autoIncrement,
+    primaryKey: dto.isPrimaryKey || false,
+    unique: dto.isUnique || false,
+    nullable: dto.isNullable ?? true,
+    increment: dto.isAutoIncrement,
     isArray: dto.isArray,
     characterMaximumLength: dto.maxLength,
     precision: dto.precision,
     scale: dto.scale,
     default: dto.defaultValue,
     collation: dto.collation,
-    comments: dto.description,
+    comments: dto.comment,
+    order: dto.orderIndex,
     createdAt: dto.createdAt ? new Date(dto.createdAt).getTime() : Date.now(),
 });
 

@@ -321,10 +321,14 @@ export const ChartDBProvider: React.FC<
                 ),
             ]);
 
-            events.emit({
-                action: 'add_tables',
-                data: { tables: tablesToAdd },
-            });
+            // Only emit event when this is a local action (updateHistory: true)
+            // to avoid infinite loops when receiving remote events
+            if (options.updateHistory) {
+                events.emit({
+                    action: 'add_tables',
+                    data: { tables: tablesToAdd },
+                });
+            }
 
             if (options.updateHistory) {
                 addUndoAction({
@@ -425,7 +429,14 @@ export const ChartDBProvider: React.FC<
                 tables.filter((table) => !ids.includes(table.id))
             );
 
-            events.emit({ action: 'remove_tables', data: { tableIds: ids } });
+            // Only emit event when this is a local action (updateHistory: true)
+            // to avoid infinite loops when receiving remote events
+            if (options?.updateHistory) {
+                events.emit({
+                    action: 'remove_tables',
+                    data: { tableIds: ids },
+                });
+            }
 
             const updatedAt = new Date();
             setDiagramUpdatedAt(updatedAt);
@@ -481,22 +492,34 @@ export const ChartDBProvider: React.FC<
             table: Partial<DBTable>,
             options = { updateHistory: true }
         ) => {
+            console.log('[ChartDBProvider] updateTable called:', {
+                id,
+                table,
+                options,
+            });
             const prevTable = getTable(id);
             setTables((tables) =>
                 tables.map((t) => (t.id === id ? { ...t, ...table } : t))
             );
 
-            events.emit({
-                action: 'update_table',
-                data: { id, table },
-            });
+            // Only emit event when this is a local action (updateHistory: true)
+            // to avoid infinite loops when receiving remote events
+            if (options.updateHistory) {
+                console.log('[ChartDBProvider] Emitting update_table event');
+                events.emit({
+                    action: 'update_table',
+                    data: { id, table },
+                });
+            }
 
             const updatedAt = new Date();
             setDiagramUpdatedAt(updatedAt);
+            console.log('[ChartDBProvider] Calling db.updateTable');
             await Promise.all([
                 db.updateDiagram({ id: diagramId, attributes: { updatedAt } }),
                 db.updateTable({ id, attributes: table }),
             ]);
+            console.log('[ChartDBProvider] db.updateTable completed');
 
             if (!!prevTable && options.updateHistory) {
                 addUndoAction({
@@ -605,7 +628,8 @@ export const ChartDBProvider: React.FC<
                         prevTable.x !== updatedTable.x ||
                         prevTable.y !== updatedTable.y ||
                         prevTable.width !== updatedTable.width ||
-                        prevTable.name !== updatedTable.name;
+                        prevTable.name !== updatedTable.name ||
+                        prevTable.order !== updatedTable.order;
 
                     if (hasChanges) {
                         events.emit({
@@ -718,6 +742,19 @@ export const ChartDBProvider: React.FC<
                 })
             );
 
+            // Only emit event when this is a local action (updateHistory: true)
+            // to avoid infinite loops when receiving remote events
+            if (options.updateHistory) {
+                events.emit({
+                    action: 'update_field',
+                    data: {
+                        tableId,
+                        fieldId,
+                        field: { ...prevField, ...field },
+                    },
+                });
+            }
+
             const table = await db.getTable({ diagramId, id: tableId });
             if (!table) {
                 return;
@@ -748,7 +785,15 @@ export const ChartDBProvider: React.FC<
                 resetRedoStack();
             }
         },
-        [db, diagramId, setTables, addUndoAction, resetRedoStack, getField]
+        [
+            db,
+            diagramId,
+            setTables,
+            addUndoAction,
+            resetRedoStack,
+            getField,
+            events,
+        ]
     );
 
     const removeField: ChartDBContext['removeField'] = useCallback(
@@ -782,14 +827,18 @@ export const ChartDBProvider: React.FC<
                 })
             );
 
-            events.emit({
-                action: 'remove_field',
-                data: {
-                    tableId: tableId,
-                    fieldId,
-                    fields: fields.filter((f) => f.id !== fieldId),
-                },
-            });
+            // Only emit event when this is a local action (updateHistory: true)
+            // to avoid infinite loops when receiving remote events
+            if (options.updateHistory) {
+                events.emit({
+                    action: 'remove_field',
+                    data: {
+                        tableId: tableId,
+                        fieldId,
+                        fields: fields.filter((f) => f.id !== fieldId),
+                    },
+                });
+            }
 
             const table = await db.getTable({ diagramId, id: tableId });
             if (!table) {
@@ -854,14 +903,18 @@ export const ChartDBProvider: React.FC<
                 });
             });
 
-            events.emit({
-                action: 'add_field',
-                data: {
-                    tableId: tableId,
-                    field,
-                    fields: [...fields, field],
-                },
-            });
+            // Only emit event when this is a local action (updateHistory: true)
+            // to avoid infinite loops when receiving remote events
+            if (options.updateHistory) {
+                events.emit({
+                    action: 'add_field',
+                    data: {
+                        tableId: tableId,
+                        field,
+                        fields: [...fields, field],
+                    },
+                });
+            }
 
             const table = await db.getTable({ diagramId, id: tableId });
 
@@ -937,6 +990,15 @@ export const ChartDBProvider: React.FC<
                 )
             );
 
+            // Only emit event when this is a local action (updateHistory: true)
+            // to avoid infinite loops when receiving remote events
+            if (options.updateHistory) {
+                events.emit({
+                    action: 'add_index',
+                    data: { tableId, index },
+                });
+            }
+
             const dbTable = await db.getTable({ diagramId, id: tableId });
             if (!dbTable) {
                 return;
@@ -986,6 +1048,15 @@ export const ChartDBProvider: React.FC<
                         : table
                 )
             );
+
+            // Only emit event when this is a local action (updateHistory: true)
+            // to avoid infinite loops when receiving remote events
+            if (options.updateHistory) {
+                events.emit({
+                    action: 'remove_index',
+                    data: { tableId, indexId },
+                });
+            }
 
             const dbTable = await db.getTable({
                 diagramId,
@@ -1062,6 +1133,15 @@ export const ChartDBProvider: React.FC<
                 )
             );
 
+            // Only emit event when this is a local action (updateHistory: true)
+            // to avoid infinite loops when receiving remote events
+            if (options.updateHistory) {
+                events.emit({
+                    action: 'update_index',
+                    data: { tableId, indexId, index },
+                });
+            }
+
             const dbTable = await db.getTable({ diagramId, id: tableId });
 
             if (!dbTable) {
@@ -1105,13 +1185,16 @@ export const ChartDBProvider: React.FC<
                 ...relationships,
             ]);
 
-            // Emit events for each relationship added
-            relationships.forEach((relationship) => {
-                events.emit({
-                    action: 'add_relationship',
-                    data: { relationship },
+            // Only emit events when this is a local action (updateHistory: true)
+            // to avoid infinite loops when receiving remote events
+            if (options.updateHistory) {
+                relationships.forEach((relationship) => {
+                    events.emit({
+                        action: 'add_relationship',
+                        data: { relationship },
+                    });
                 });
-            });
+            }
 
             const updatedAt = new Date();
             setDiagramUpdatedAt(updatedAt);
@@ -1210,13 +1293,16 @@ export const ChartDBProvider: React.FC<
                     )
                 );
 
-                // Emit events for each relationship removed
-                ids.forEach((id) => {
-                    events.emit({
-                        action: 'remove_relationship',
-                        data: { relationshipId: id },
+                // Only emit events when this is a local action (updateHistory: true)
+                // to avoid infinite loops when receiving remote events
+                if (options.updateHistory) {
+                    ids.forEach((id) => {
+                        events.emit({
+                            action: 'remove_relationship',
+                            data: { relationshipId: id },
+                        });
                     });
-                });
+                }
 
                 const updatedAt = new Date();
                 setDiagramUpdatedAt(updatedAt);
@@ -1272,11 +1358,14 @@ export const ChartDBProvider: React.FC<
                     )
                 );
 
-                // Emit event for relationship update
-                events.emit({
-                    action: 'update_relationship',
-                    data: { relationshipId: id, relationship },
-                });
+                // Only emit event when this is a local action (updateHistory: true)
+                // to avoid infinite loops when receiving remote events
+                if (options.updateHistory) {
+                    events.emit({
+                        action: 'update_relationship',
+                        data: { relationshipId: id, relationship },
+                    });
+                }
 
                 const updatedAt = new Date();
                 setDiagramUpdatedAt(updatedAt);
@@ -1474,13 +1563,16 @@ export const ChartDBProvider: React.FC<
         async (areas: Area[], options = { updateHistory: true }) => {
             setAreas((currentAreas) => [...currentAreas, ...areas]);
 
-            // Emit events for each area added
-            areas.forEach((area) => {
-                events.emit({
-                    action: 'add_area',
-                    data: { area },
+            // Only emit events when this is a local action (updateHistory: true)
+            // to avoid infinite loops when receiving remote events
+            if (options.updateHistory) {
+                areas.forEach((area) => {
+                    events.emit({
+                        action: 'add_area',
+                        data: { area },
+                    });
                 });
-            });
+            }
 
             const updatedAt = new Date();
             setDiagramUpdatedAt(updatedAt);
@@ -1542,13 +1634,16 @@ export const ChartDBProvider: React.FC<
 
             setAreas((areas) => areas.filter((area) => !ids.includes(area.id)));
 
-            // Emit events for each area removed
-            ids.forEach((id) => {
-                events.emit({
-                    action: 'remove_area',
-                    data: { areaId: id },
+            // Only emit events when this is a local action (updateHistory: true)
+            // to avoid infinite loops when receiving remote events
+            if (options.updateHistory) {
+                ids.forEach((id) => {
+                    events.emit({
+                        action: 'remove_area',
+                        data: { areaId: id },
+                    });
                 });
-            });
+            }
 
             const updatedAt = new Date();
             setDiagramUpdatedAt(updatedAt);
@@ -1589,11 +1684,14 @@ export const ChartDBProvider: React.FC<
                 areas.map((a) => (a.id === id ? { ...a, ...area } : a))
             );
 
-            // Emit event for area update
-            events.emit({
-                action: 'update_area',
-                data: { areaId: id, area },
-            });
+            // Only emit event when this is a local action (updateHistory: true)
+            // to avoid infinite loops when receiving remote events
+            if (options.updateHistory) {
+                events.emit({
+                    action: 'update_area',
+                    data: { areaId: id, area },
+                });
+            }
 
             const updatedAt = new Date();
             setDiagramUpdatedAt(updatedAt);
@@ -1628,13 +1726,16 @@ export const ChartDBProvider: React.FC<
         async (notes: Note[], options = { updateHistory: true }) => {
             setNotes((currentNotes) => [...currentNotes, ...notes]);
 
-            // Emit events for each note added
-            notes.forEach((note) => {
-                events.emit({
-                    action: 'add_note',
-                    data: { note },
+            // Only emit events when this is a local action (updateHistory: true)
+            // to avoid infinite loops when receiving remote events
+            if (options.updateHistory) {
+                notes.forEach((note) => {
+                    events.emit({
+                        action: 'add_note',
+                        data: { note },
+                    });
                 });
-            });
+            }
 
             const updatedAt = new Date();
             setDiagramUpdatedAt(updatedAt);
@@ -1696,13 +1797,16 @@ export const ChartDBProvider: React.FC<
 
             setNotes((notes) => notes.filter((note) => !ids.includes(note.id)));
 
-            // Emit events for each note removed
-            ids.forEach((id) => {
-                events.emit({
-                    action: 'remove_note',
-                    data: { noteId: id },
+            // Only emit events when this is a local action (updateHistory: true)
+            // to avoid infinite loops when receiving remote events
+            if (options.updateHistory) {
+                ids.forEach((id) => {
+                    events.emit({
+                        action: 'remove_note',
+                        data: { noteId: id },
+                    });
                 });
-            });
+            }
 
             const updatedAt = new Date();
             setDiagramUpdatedAt(updatedAt);
@@ -1743,11 +1847,14 @@ export const ChartDBProvider: React.FC<
                 notes.map((n) => (n.id === id ? { ...n, ...note } : n))
             );
 
-            // Emit event for note update
-            events.emit({
-                action: 'update_note',
-                data: { noteId: id, note },
-            });
+            // Only emit event when this is a local action (updateHistory: true)
+            // to avoid infinite loops when receiving remote events
+            if (options.updateHistory) {
+                events.emit({
+                    action: 'update_note',
+                    data: { noteId: id, note },
+                });
+            }
 
             const updatedAt = new Date();
             setDiagramUpdatedAt(updatedAt);

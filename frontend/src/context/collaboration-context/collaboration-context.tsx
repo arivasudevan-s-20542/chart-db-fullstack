@@ -9,6 +9,7 @@ export interface CollaborationContextValue {
     // Connection state
     isConnected: boolean;
     isConnecting: boolean;
+    latency: number; // -1 if not measured yet
 
     // Presence
     activeUsers: UserPresence[];
@@ -32,6 +33,7 @@ export interface CollaborationContextValue {
 export const collaborationContext = createContext<CollaborationContextValue>({
     isConnected: false,
     isConnecting: false,
+    latency: -1,
     activeUsers: [],
     currentDiagramId: null,
     joinDiagram: async () => {},

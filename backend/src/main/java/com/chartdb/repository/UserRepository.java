@@ -29,6 +29,9 @@ public interface UserRepository extends JpaRepository<User, String> {
     // Find active users
     List<User> findByIsActiveTrue();
     
+    // Find by OAuth provider and provider ID
+    Optional<User> findByOauthProviderAndOauthProviderId(String provider, String providerId);
+    
     // Search users by email or username (for sharing)
     @Query("SELECT u FROM User u WHERE " +
            "LOWER(u.email) LIKE LOWER(CONCAT('%', :query, '%')) OR " +

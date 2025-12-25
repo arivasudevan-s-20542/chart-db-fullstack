@@ -26,6 +26,16 @@ const routes: RouteObject[] = [
             };
         },
     },
+    {
+        path: 'oauth2/callback',
+        async lazy() {
+            const { OAuth2CallbackPage } =
+                await import('./pages/oauth2-callback-page/oauth2-callback-page');
+            return {
+                element: <OAuth2CallbackPage />,
+            };
+        },
+    },
     // Main application routes
     ...['', 'diagrams/:diagramId'].map((path) => ({
         path,

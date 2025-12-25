@@ -12,7 +12,8 @@ import java.util.Map;
 @Entity
 @Table(name = "users", indexes = {
     @Index(name = "idx_users_email", columnList = "email"),
-    @Index(name = "idx_users_username", columnList = "username")
+    @Index(name = "idx_users_username", columnList = "username"),
+    @Index(name = "idx_users_oauth", columnList = "oauth_provider, oauth_provider_id")
 })
 @Getter
 @Setter
@@ -24,7 +25,7 @@ public class User extends BaseEntity {
     @Column(nullable = false, unique = true, length = 255)
     private String email;
     
-    @Column(name = "password_hash", nullable = false, length = 255)
+    @Column(name = "password_hash", length = 255)
     private String passwordHash;
     
     @Column(nullable = false, length = 100)
@@ -39,6 +40,13 @@ public class User extends BaseEntity {
     @Column(name = "cursor_color", length = 7)
     @Builder.Default
     private String cursorColor = "#3B82F6";
+    
+    // OAuth2 fields
+    @Column(name = "oauth_provider", length = 20)
+    private String oauthProvider;
+    
+    @Column(name = "oauth_provider_id", length = 255)
+    private String oauthProviderId;
     
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")

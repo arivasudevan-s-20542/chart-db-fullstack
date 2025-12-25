@@ -103,6 +103,8 @@ public class RelationshipService {
         if (request.getSourceHandle() != null) relationship.setSourceHandle(request.getSourceHandle());
         if (request.getTargetHandle() != null) relationship.setTargetHandle(request.getTargetHandle());
         if (request.getPathPoints() != null) relationship.setPathPoints(request.getPathPoints());
+        if (request.getSourceCardinality() != null) relationship.setCardinalitySource(request.getSourceCardinality());
+        if (request.getTargetCardinality() != null) relationship.setCardinalityTarget(request.getTargetCardinality());
         
         relationship = relationshipRepository.save(relationship);
         return relationshipMapper.toResponse(relationship);
