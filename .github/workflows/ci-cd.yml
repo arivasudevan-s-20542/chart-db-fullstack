@@ -1,8 +1,8 @@
-name: CI/CD Pipeline
+name: CI/CD Pipeline (Separate Containers)
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
     branches: [main]
 

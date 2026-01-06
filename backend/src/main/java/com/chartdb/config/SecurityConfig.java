@@ -96,7 +96,13 @@ public class SecurityConfig {
             .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
+                // Static resources (frontend)
+                .requestMatchers("/", "/index.html", "/favicon.ico").permitAll()
+                .requestMatchers("/assets/**", "/static/**", "/*.js", "/*.css", "/*.png", "/*.svg", "/*.ico").permitAll()
+                // SPA routes - allow all frontend routes
+                .requestMatchers("/login", "/register", "/diagrams", "/diagrams/**", "/editor", "/editor/**").permitAll()
+                .requestMatchers("/settings", "/settings/**", "/profile", "/profile/**").permitAll()
+                // Public API endpoints
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/api/v1/health/**").permitAll()
@@ -106,8 +112,10 @@ public class SecurityConfig {
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                 // Swagger/OpenAPI
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                // All other endpoints require authentication
-                .anyRequest().authenticated()
+                // All other API endpoints require authentication
+                .requestMatchers("/api/**").authenticated()
+                // Allow everything else (static files)
+                .anyRequest().permitAll()
             );
         
         // Only configure OAuth2 login if at least one provider is configured
