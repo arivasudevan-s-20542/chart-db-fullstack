@@ -1,0 +1,2 @@
+# Frontend build artifacts will be placed here
+# Run: cd frontend && npm run build && cp -r dist/* ../catalyst/client/

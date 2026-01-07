@@ -1,0 +1,33 @@
+{
+  "project_name": "chartdb-fullstack",
+  "project_domain": "chartdb",
+  "env_name": "Development",
+  "functions": {
+    "chartdb_backend": {
+      "type": "advancedio",
+      "language": "java",
+      "main_class": "com.chartdb.catalyst.MainHandler",
+      "heap_size": 512,
+      "execution_timeout": 90000,
+      "http_paths": [
+        {
+          "path": "/api/*",
+          "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+        },
+        {
+          "path": "/ws/*",
+          "methods": ["GET", "POST"]
+        },
+        {
+          "path": "/login/oauth2/*",
+          "methods": ["GET", "POST"]
+        }
+      ]
+    }
+  },
+  "client": {
+    "client_name": "chartdb_web",
+    "client_type": "web",
+    "default_host": true
+  }
+}

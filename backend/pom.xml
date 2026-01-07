@@ -198,4 +198,46 @@
             </plugin>
         </plugins>
     </build>
+    
+    <profiles>
+        <!-- Catalyst Deployment Profile -->
+        <profile>
+            <id>catalyst</id>
+            <properties>
+                <spring.profiles.active>catalyst</spring.profiles.active>
+            </properties>
+            <dependencies>
+                <!-- Zoho Catalyst SDK -->
+                <dependency>
+                    <groupId>com.zoho.catalyst</groupId>
+                    <artifactId>catalyst-sdk</artifactId>
+                    <version>1.0.0</version>
+                </dependency>
+            </dependencies>
+            <repositories>
+                <repository>
+                    <id>catalyst-repo</id>
+                    <url>https://maven.zohodl.com/</url>
+                </repository>
+            </repositories>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-maven-plugin</artifactId>
+                        <configuration>
+                            <excludes>
+                                <exclude>
+                                    <groupId>org.projectlombok</groupId>
+                                    <artifactId>lombok</artifactId>
+                                </exclude>
+                            </excludes>
+                            <!-- Create executable JAR for Catalyst -->
+                            <executable>true</executable>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
