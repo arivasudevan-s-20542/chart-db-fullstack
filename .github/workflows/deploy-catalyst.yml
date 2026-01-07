@@ -15,8 +15,9 @@ on:
           - Production
 
 env:
-  CATALYST_PROJECT_ID: ${{ secrets.CATALYST_PROJECT_ID }}
-  CATALYST_ORG_ID: ${{ secrets.CATALYST_ORG_ID }}
+  # Variables (non-sensitive - configure in Settings → Variables)
+  CATALYST_PROJECT_ID: ${{ vars.CATALYST_PROJECT_ID }}
+  CATALYST_ORG_ID: ${{ vars.CATALYST_ORG_ID }}
   NODE_VERSION: '20'
   JAVA_VERSION: '21'
 
@@ -142,50 +143,50 @@ jobs:
           echo "${{ secrets.CATALYST_REFRESH_TOKEN }}" > ~/.catalyst_token
           catalyst auth:login --token-file ~/.catalyst_token
         env:
-          CATALYST_ORG_ID: ${{ secrets.CATALYST_ORG_ID }}
+          CATALYST_ORG_ID: ${{ vars.CATALYST_ORG_ID }}
 
       - name: Deploy to Catalyst
         working-directory: ./catalyst
         run: |
-          catalyst deploy --project ${{ secrets.CATALYST_PROJECT_ID }}
+          catalyst deploy --project ${{ vars.CATALYST_PROJECT_ID }}
         env:
-          CATALYST_ORG_ID: ${{ secrets.CATALYST_ORG_ID }}
-          CATALYST_PROJECT_ID: ${{ secrets.CATALYST_PROJECT_ID }}
+          CATALYST_ORG_ID: ${{ vars.CATALYST_ORG_ID }}
+          CATALYST_PROJECT_ID: ${{ vars.CATALYST_PROJECT_ID }}
 
       - name: Set Catalyst Environment Variables
         working-directory: ./catalyst
         run: |
           # Set environment variables in Catalyst
           catalyst env:set JWT_SECRET="${{ secrets.JWT_SECRET }}" \
-            --project ${{ secrets.CATALYST_PROJECT_ID }}
+            --project ${{ vars.CATALYST_PROJECT_ID }}
           
           # OAuth2 credentials (if configured)
           if [ -n "${{ secrets.GOOGLE_CLIENT_ID }}" ]; then
             catalyst env:set GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
               GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
-              --project ${{ secrets.CATALYST_PROJECT_ID }}
+              --project ${{ vars.CATALYST_PROJECT_ID }}
           fi
           
           if [ -n "${{ secrets.GITHUB_CLIENT_ID }}" ]; then
             catalyst env:set GITHUB_CLIENT_ID="${{ secrets.GITHUB_CLIENT_ID }}" \
               GITHUB_CLIENT_SECRET="${{ secrets.GITHUB_CLIENT_SECRET }}" \
-              --project ${{ secrets.CATALYST_PROJECT_ID }}
+              --project ${{ vars.CATALYST_PROJECT_ID }}
           fi
           
           if [ -n "${{ secrets.ZOHO_CLIENT_ID }}" ]; then
             catalyst env:set ZOHO_CLIENT_ID="${{ secrets.ZOHO_CLIENT_ID }}" \
               ZOHO_CLIENT_SECRET="${{ secrets.ZOHO_CLIENT_SECRET }}" \
-              --project ${{ secrets.CATALYST_PROJECT_ID }}
+              --project ${{ vars.CATALYST_PROJECT_ID }}
           fi
 
       - name: Deployment Summary
         run: |
           echo "## 🚀 Catalyst Deployment Complete!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Project ID:** ${{ secrets.CATALYST_PROJECT_ID }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Project ID:** ${{ vars.CATALYST_PROJECT_ID }}" >> $GITHUB_STEP_SUMMARY
           echo "**Environment:** ${{ github.event.inputs.environment || 'Development' }}" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Access URLs" >> $GITHUB_STEP_SUMMARY
-          echo "- **Web Client:** https://chartdb-${{ secrets.CATALYST_PROJECT_ID }}.catalyst.zoho.com" >> $GITHUB_STEP_SUMMARY
-          echo "- **API Endpoint:** https://chartdb-${{ secrets.CATALYST_PROJECT_ID }}.catalyst.zoho.com/server/chartdb_backend" >> $GITHUB_STEP_SUMMARY
+          echo "- **Web Client:** https://chartdb-${{ vars.CATALYST_PROJECT_ID }}.catalyst.zoho.com" >> $GITHUB_STEP_SUMMARY
+          echo "- **API Endpoint:** https://chartdb-${{ vars.CATALYST_PROJECT_ID }}.catalyst.zoho.com/server/chartdb_backend" >> $GITHUB_STEP_SUMMARY
