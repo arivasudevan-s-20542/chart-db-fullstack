@@ -33,7 +33,7 @@ spring:
 # Production JWT (from environment)
 jwt:
   secret: ${JWT_SECRET}
-  access-token-expiration: ${JWT_ACCESS_EXPIRATION:900000}
+  access-token-expiration: ${JWT_ACCESS_EXPIRATION:86400000}
   refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
 
 # Production CORS

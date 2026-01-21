@@ -62,7 +62,7 @@ server:
 # JWT Configuration
 jwt:
   secret: ${JWT_SECRET:catalyst-jwt-secret-key-change-in-production-32-characters}
-  access-token-expiration: 900000      # 15 minutes
+  access-token-expiration: 86400000     # 24 hours
   refresh-token-expiration: 604800000  # 7 days
 
 # CORS Configuration for Catalyst
