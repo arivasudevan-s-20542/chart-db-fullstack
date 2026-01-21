@@ -66,7 +66,7 @@ server:
 # JWT Configuration
 jwt:
   secret: dev-secret-key-for-testing-only-change-in-production-32-characters-minimum
-  access-token-expiration: 900000      # 15 minutes
+  access-token-expiration: 86400000     # 24 hours
   refresh-token-expiration: 604800000  # 7 days
 
 # CORS Configuration
