@@ -50,7 +50,11 @@ const STATUS_CONFIG = {
     },
 };
 
-export const TableStatusBadge: React.FC<TableStatusBadgeProps> = ({ status, showLabel = true, size = 'sm' }) => {
+export const TableStatusBadge: React.FC<TableStatusBadgeProps> = ({
+    status,
+    showLabel = true,
+    size = 'sm',
+}) => {
     const config = STATUS_CONFIG[status];
     const Icon = config.icon;
 
@@ -62,7 +66,10 @@ export const TableStatusBadge: React.FC<TableStatusBadgeProps> = ({ status, show
 
     if (!showLabel) {
         return (
-            <div className={`${config.color}`} title={`${config.label}: ${config.description}`}>
+            <div
+                className={`${config.color}`}
+                title={`${config.label}: ${config.description}`}
+            >
                 <Icon className={iconSizes[size]} />
             </div>
         );
@@ -95,19 +102,27 @@ export const TableStatusIndicator: React.FC<TableStatusIndicatorProps> = ({
     const Icon = config.icon;
 
     return (
-        <div className={`p-2 rounded-lg border ${config.borderColor} ${config.bgColor}`}>
-            <div className="flex items-center gap-2 mb-1">
-                <Icon className={`h-4 w-4 ${config.color}`} />
-                <span className={`text-sm font-medium ${config.color}`}>{config.label}</span>
+        <div
+            className={`rounded-lg border p-2 ${config.borderColor} ${config.bgColor}`}
+        >
+            <div className="mb-1 flex items-center gap-2">
+                <Icon className={`size-4 ${config.color}`} />
+                <span className={`text-sm font-medium ${config.color}`}>
+                    {config.label}
+                </span>
             </div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">{config.description}</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+                {config.description}
+            </p>
             {lastSyncedAt && (
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="mt-1 text-xs text-gray-500">
                     Last synced: {new Date(lastSyncedAt).toLocaleString()}
                 </p>
             )}
             {driftDetails && status === TableStatus.DRIFT && (
-                <p className="text-xs text-red-600 dark:text-red-400 mt-1">{driftDetails}</p>
+                <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+                    {driftDetails}
+                </p>
             )}
         </div>
     );

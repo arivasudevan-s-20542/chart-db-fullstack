@@ -15,22 +15,55 @@ export interface AIFunctionCall {
 export interface ActionResult {
     success: boolean;
     action: string;
-    summary: string;  // Human-readable summary
-    elementId?: string;  // ID of created/modified element for focusing
+    summary: string; // Human-readable summary
+    elementId?: string; // ID of created/modified element for focusing
     elementType?: 'table' | 'column' | 'relationship';
     error?: string;
 }
 
 export interface DiagramContext {
-    addTable: (table: DBTable, options?: { updateHistory?: boolean }) => Promise<void>;
-    updateTable: (tableId: string, updates: Partial<DBTable>, options?: { updateHistory?: boolean }) => Promise<void>;
-    removeTable: (tableId: string, options?: { updateHistory?: boolean }) => Promise<void>;
-    addField: (tableId: string, field: DBField, options?: { updateHistory?: boolean }) => Promise<void>;
-    updateField: (tableId: string, fieldId: string, updates: Partial<DBField>, options?: { updateHistory?: boolean }) => Promise<void>;
-    removeField: (tableId: string, fieldId: string, options?: { updateHistory?: boolean }) => Promise<void>;
-    addRelationship: (relationship: DBRelationship, options?: { updateHistory?: boolean }) => Promise<void>;
-    updateRelationship: (relationshipId: string, updates: Partial<DBRelationship>, options?: { updateHistory?: boolean }) => Promise<void>;
-    removeRelationship: (relationshipId: string, options?: { updateHistory?: boolean }) => Promise<void>;
+    addTable: (
+        table: DBTable,
+        options?: { updateHistory?: boolean }
+    ) => Promise<void>;
+    updateTable: (
+        tableId: string,
+        updates: Partial<DBTable>,
+        options?: { updateHistory?: boolean }
+    ) => Promise<void>;
+    removeTable: (
+        tableId: string,
+        options?: { updateHistory?: boolean }
+    ) => Promise<void>;
+    addField: (
+        tableId: string,
+        field: DBField,
+        options?: { updateHistory?: boolean }
+    ) => Promise<void>;
+    updateField: (
+        tableId: string,
+        fieldId: string,
+        updates: Partial<DBField>,
+        options?: { updateHistory?: boolean }
+    ) => Promise<void>;
+    removeField: (
+        tableId: string,
+        fieldId: string,
+        options?: { updateHistory?: boolean }
+    ) => Promise<void>;
+    addRelationship: (
+        relationship: DBRelationship,
+        options?: { updateHistory?: boolean }
+    ) => Promise<void>;
+    updateRelationship: (
+        relationshipId: string,
+        updates: Partial<DBRelationship>,
+        options?: { updateHistory?: boolean }
+    ) => Promise<void>;
+    removeRelationship: (
+        relationshipId: string,
+        options?: { updateHistory?: boolean }
+    ) => Promise<void>;
     tables: DBTable[];
 }
 
@@ -224,7 +257,9 @@ async function modifyColumn(
         updates.nullable = args.nullable;
     }
 
-    await context.updateField(table.id, field.id, updates, { updateHistory: true });
+    await context.updateField(table.id, field.id, updates, {
+        updateHistory: true,
+    });
 
     const changes = Object.keys(updates).join(', ');
     return {
@@ -308,7 +343,8 @@ async function createRelationship(
 ): Promise<ActionResult> {
     const sourceTable = args.sourceTable as string;
     const targetTable = args.targetTable as string;
-    const relationshipType = (args.relationshipType as RelationshipType) || 'one_to_many';
+    const relationshipType =
+        (args.relationshipType as RelationshipType) || 'one_to_many';
 
     // Find tables
     const source = context.tables.find((t) => t.name === sourceTable);

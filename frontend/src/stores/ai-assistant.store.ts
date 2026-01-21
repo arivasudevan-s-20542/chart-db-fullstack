@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import {
+import type {
     AIChatSession,
     AIMessage,
     StartChatSessionRequest,
@@ -37,7 +37,10 @@ interface AIAssistantState {
     startSession: (request: StartChatSessionRequest) => Promise<AIChatSession>;
     setActiveSession: (sessionId: string | null) => void;
     loadMessages: (sessionId: string) => Promise<void>;
-    sendMessage: (sessionId: string, request: ChatMessageRequest) => Promise<void>;
+    sendMessage: (
+        sessionId: string,
+        request: ChatMessageRequest
+    ) => Promise<void>;
     endSession: (sessionId: string) => Promise<void>;
     clearError: () => void;
 }
@@ -64,7 +67,7 @@ export const useAIAssistantStore = create<AIAssistantState>()(
                 try {
                     const sessions = await aiApi.getActiveSessions(diagramId);
                     set({ sessions, isLoadingSessions: false });
-                } catch (error) {
+                } catch {
                     set({ isLoadingSessions: false });
                 }
             },
@@ -89,7 +92,7 @@ export const useAIAssistantStore = create<AIAssistantState>()(
                         defaultModel: 'mistral-small-latest',
                         temperature: 0.7,
                     };
-                    
+
                     const updatedConfig = { ...currentConfig, ...configUpdate };
                     await aiApi.updateConfig(updatedConfig);
                     set({ userConfig: updatedConfig });
@@ -111,7 +114,10 @@ export const useAIAssistantStore = create<AIAssistantState>()(
                     }));
                     return session;
                 } catch (error) {
-                    const message = error instanceof Error ? error.message : 'Failed to start chat session';
+                    const message =
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to start chat session';
                     set({ messageError: message });
                     throw error;
                 }
@@ -119,7 +125,11 @@ export const useAIAssistantStore = create<AIAssistantState>()(
 
             // Set active session
             setActiveSession: (sessionId: string | null) => {
-                set({ activeSessionId: sessionId, messages: [], messageError: null });
+                set({
+                    activeSessionId: sessionId,
+                    messages: [],
+                    messageError: null,
+                });
                 if (sessionId) {
                     get().loadMessages(sessionId);
                 }
@@ -133,16 +143,22 @@ export const useAIAssistantStore = create<AIAssistantState>()(
                     set({ messages, isLoadingMessages: false });
                 } catch (error) {
                     set({
-                        messageError: error instanceof Error ? error.message : 'Failed to load messages',
+                        messageError:
+                            error instanceof Error
+                                ? error.message
+                                : 'Failed to load messages',
                         isLoadingMessages: false,
                     });
                 }
             },
 
             // Send a message
-            sendMessage: async (sessionId: string, request: ChatMessageRequest) => {
+            sendMessage: async (
+                sessionId: string,
+                request: ChatMessageRequest
+            ) => {
                 set({ isSendingMessage: true, messageError: null });
-                
+
                 // Add user message immediately
                 const userMessage: AIMessage = {
                     id: `user-${Date.now()}`,
@@ -151,7 +167,7 @@ export const useAIAssistantStore = create<AIAssistantState>()(
                     content: request.content,
                     createdAt: new Date().toISOString(),
                 };
-                
+
                 // Add assistant message placeholder for streaming
                 const assistantMessageId = `assistant-${Date.now()}`;
                 const assistantMessage: AIMessage = {
@@ -161,29 +177,45 @@ export const useAIAssistantStore = create<AIAssistantState>()(
                     content: '',
                     createdAt: new Date().toISOString(),
                 };
-                
+
                 set((state) => ({
-                    messages: [...state.messages, userMessage, assistantMessage],
+                    messages: [
+                        ...state.messages,
+                        userMessage,
+                        assistantMessage,
+                    ],
                 }));
 
                 try {
-                    await aiApi.sendMessage(sessionId, request, (chunk: string) => {
-                        // Update the assistant message with streaming content
-                        set((state) => ({
-                            messages: state.messages.map((msg) =>
-                                msg.id === assistantMessageId
-                                    ? { ...msg, content: msg.content + chunk }
-                                    : msg
-                            ),
-                        }));
-                    });
-                    
+                    await aiApi.sendMessage(
+                        sessionId,
+                        request,
+                        (chunk: string) => {
+                            // Update the assistant message with streaming content
+                            set((state) => ({
+                                messages: state.messages.map((msg) =>
+                                    msg.id === assistantMessageId
+                                        ? {
+                                              ...msg,
+                                              content: msg.content + chunk,
+                                          }
+                                        : msg
+                                ),
+                            }));
+                        }
+                    );
+
                     set({ isSendingMessage: false });
                 } catch (error) {
                     // Remove the placeholder assistant message on error
                     set((state) => ({
-                        messages: state.messages.filter((msg) => msg.id !== assistantMessageId),
-                        messageError: error instanceof Error ? error.message : 'Failed to send message',
+                        messages: state.messages.filter(
+                            (msg) => msg.id !== assistantMessageId
+                        ),
+                        messageError:
+                            error instanceof Error
+                                ? error.message
+                                : 'Failed to send message',
                         isSendingMessage: false,
                     }));
                 }
@@ -191,16 +223,18 @@ export const useAIAssistantStore = create<AIAssistantState>()(
 
             // End a session
             endSession: async (sessionId: string) => {
-                try {
-                    await aiApi.endSession(sessionId);
-                    set((state) => ({
-                        sessions: state.sessions.filter((s) => s.id !== sessionId),
-                        activeSessionId: state.activeSessionId === sessionId ? null : state.activeSessionId,
-                        messages: state.activeSessionId === sessionId ? [] : state.messages,
-                    }));
-                } catch (error) {
-                    throw error;
-                }
+                await aiApi.endSession(sessionId);
+                set((state) => ({
+                    sessions: state.sessions.filter((s) => s.id !== sessionId),
+                    activeSessionId:
+                        state.activeSessionId === sessionId
+                            ? null
+                            : state.activeSessionId,
+                    messages:
+                        state.activeSessionId === sessionId
+                            ? []
+                            : state.messages,
+                }));
             },
 
             // Clear errors

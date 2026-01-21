@@ -3,18 +3,27 @@ import { AIChatPanel } from './AIChatPanel';
 import { AISessionList } from './AISessionList';
 import { NewSessionModal } from './NewSessionModal';
 import { useAIAssistantStore } from '@/stores/ai-assistant.store';
-import { AIChatSession } from '@/types/ai.types';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/tabs/tabs';
+import type { AIChatSession } from '@/types/ai.types';
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from '@/components/tabs/tabs';
 
 interface AIAssistantPanelProps {
     diagramId: string;
     onHighlightTable?: (tableId: string) => void;
 }
 
-export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({ diagramId, onHighlightTable }) => {
+export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({
+    diagramId,
+    onHighlightTable,
+}) => {
     const [isNewSessionModalOpen, setIsNewSessionModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState('chat');
-    const { sessions, activeSessionId, setActiveSession } = useAIAssistantStore();
+    const { sessions, activeSessionId, setActiveSession } =
+        useAIAssistantStore();
 
     const activeSession = sessions.find((s) => s.id === activeSessionId);
 
@@ -25,9 +34,13 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({ diagramId, o
     };
 
     return (
-        <div className="h-full flex flex-col">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-                <TabsList className="w-full justify-start border-b rounded-none bg-transparent p-0">
+        <div className="flex h-full flex-col">
+            <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="flex flex-1 flex-col"
+            >
+                <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0">
                     <TabsTrigger
                         value="chat"
                         className="rounded-none border-b-2 border-transparent data-[state=active]:border-purple-500"
@@ -45,13 +58,20 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({ diagramId, o
                 <div className="flex-1 overflow-hidden p-4">
                     <TabsContent value="chat" className="mt-0 h-full">
                         {activeSession ? (
-                            <AIChatPanel sessionId={activeSession.id} onHighlightTable={onHighlightTable} />
+                            <AIChatPanel
+                                sessionId={activeSession.id}
+                                onHighlightTable={onHighlightTable}
+                            />
                         ) : (
-                            <div className="h-full flex items-center justify-center">
+                            <div className="flex h-full items-center justify-center">
                                 <div className="text-center">
-                                    <p className="text-gray-500 mb-4">No active conversation</p>
+                                    <p className="mb-4 text-gray-500">
+                                        No active conversation
+                                    </p>
                                     <button
-                                        onClick={() => setIsNewSessionModalOpen(true)}
+                                        onClick={() =>
+                                            setIsNewSessionModalOpen(true)
+                                        }
                                         className="text-purple-500 hover:underline"
                                     >
                                         Start a new chat
@@ -64,7 +84,9 @@ export const AIAssistantPanel: React.FC<AIAssistantPanelProps> = ({ diagramId, o
                     <TabsContent value="sessions" className="mt-0">
                         <AISessionList
                             diagramId={diagramId}
-                            onStartNewSession={() => setIsNewSessionModalOpen(true)}
+                            onStartNewSession={() =>
+                                setIsNewSessionModalOpen(true)
+                            }
                             onSelectSession={handleSelectSession}
                         />
                     </TabsContent>

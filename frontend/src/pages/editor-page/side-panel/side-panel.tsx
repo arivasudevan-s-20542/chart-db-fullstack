@@ -70,9 +70,7 @@ export const SidePanel: React.FC<SidePanelProps> = () => {
                                 <SelectItem value="dataDictionary">
                                     Data Dictionary
                                 </SelectItem>
-                                <SelectItem value="ai">
-                                    AI Assistant
-                                </SelectItem>
+                                <SelectItem value="ai">AI Assistant</SelectItem>
                                 <SelectItem value="connections">
                                     Database Connections
                                 </SelectItem>

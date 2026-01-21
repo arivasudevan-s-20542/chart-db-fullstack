@@ -1,17 +1,40 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/card/card';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from '@/components/card/card';
 import { Button } from '@/components/button/button';
-import { Badge } from '@/components/badge/badge';
 import { Textarea } from '@/components/textarea/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/select/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/select/select';
 import { useAIAssistantStore } from '@/stores/ai-assistant.store';
-import { AIMessage, MessageRole } from '@/types/ai.types';
-import { Bot, User, Send, Sparkles, Loader2, Settings, Zap } from 'lucide-react';
+import type { AIMessage } from '@/types/ai.types';
+import { MessageRole } from '@/types/ai.types';
+import {
+    Bot,
+    User,
+    Send,
+    Sparkles,
+    Loader2,
+    Settings,
+    Zap,
+} from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useChartDB } from '@/hooks/use-chartdb';
 import { useReactFlow } from '@xyflow/react';
-import { executeAIAction, type ActionResult } from '@/services/ai-action-executor';
+import {
+    executeAIAction,
+    type ActionResult,
+} from '@/services/ai-action-executor';
 import { AIActionCard } from './AIActionCard';
 import { focusOnTable, focusOnRelationship } from '@/lib/diagram-focus-utils';
 
@@ -30,51 +53,72 @@ const quickPrompts = [
 const defaultModels: Record<string, string[]> = {
     openai: ['gpt-4', 'gpt-3.5-turbo', 'gpt-4-turbo'],
     gemini: ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-3-flash-preview'],
-    claude: ['claude-3-5-sonnet-20241022', 'claude-3-opus-20240229', 'claude-3-sonnet-20240229'],
-    mistral: ['mistral-small-latest', 'mistral-large-latest', 'mistral-medium-latest'],
+    claude: [
+        'claude-3-5-sonnet-20241022',
+        'claude-3-opus-20240229',
+        'claude-3-sonnet-20240229',
+    ],
+    mistral: [
+        'mistral-small-latest',
+        'mistral-large-latest',
+        'mistral-medium-latest',
+    ],
     deepseek: ['deepseek-chat', 'deepseek-coder'],
 };
 
 const MessageBubble: React.FC<{
     message: AIMessage;
-    onHighlightTable?: (elementId: string, elementType: 'table' | 'column' | 'relationship') => void;
+    onHighlightTable?: (
+        elementId: string,
+        elementType: 'table' | 'column' | 'relationship'
+    ) => void;
     actionResult?: ActionResult;
 }> = ({ message, onHighlightTable, actionResult }) => {
     const isUser = message.role === MessageRole.USER;
     const isSystem = message.role === MessageRole.SYSTEM;
 
     return (
-        <div className={`flex gap-3 mb-4 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+        <div
+            className={`mb-4 flex gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
+        >
             <div
-                className={`shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${
-                    isUser 
-                        ? 'bg-blue-600' 
-                        : isSystem 
-                          ? 'bg-gray-500' 
+                className={`flex size-8 shrink-0 items-center justify-center rounded-full ${
+                    isUser
+                        ? 'bg-blue-600'
+                        : isSystem
+                          ? 'bg-gray-500'
                           : 'bg-gradient-to-br from-purple-500 to-pink-500'
                 }`}
             >
-                {isUser ? <User className="h-4 w-4 text-white" /> : <Bot className="h-4 w-4 text-white" />}
+                {isUser ? (
+                    <User className="size-4 text-white" />
+                ) : (
+                    <Bot className="size-4 text-white" />
+                )}
             </div>
 
-            <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[75%]`}>
-                <span className="text-xs text-gray-500 dark:text-gray-400 mb-1 px-2">
+            <div
+                className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} max-w-[75%]`}
+            >
+                <span className="mb-1 px-2 text-xs text-gray-500 dark:text-gray-400">
                     {isUser ? 'You' : isSystem ? 'System' : 'AI Assistant'}
                 </span>
-                
+
                 <div
                     className={`px-4 py-3 ${
                         isUser
-                            ? 'bg-blue-600 text-white rounded-2xl rounded-tr-md'
+                            ? 'rounded-2xl rounded-tr-md bg-blue-600 text-white'
                             : isSystem
-                              ? 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-2xl rounded-tl-md'
-                              : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-2xl rounded-tl-md shadow-sm'
+                              ? 'rounded-2xl rounded-tl-md bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                              : 'rounded-2xl rounded-tl-md bg-gray-100 text-gray-900 shadow-sm dark:bg-gray-800 dark:text-gray-100'
                     }`}
                 >
                     {isUser ? (
-                        <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
+                        <p className="whitespace-pre-wrap text-sm leading-relaxed">
+                            {message.content}
+                        </p>
                     ) : (
-                        <div className="prose prose-sm max-w-none dark:prose-invert prose-p:leading-relaxed prose-pre:bg-gray-900 prose-pre:text-gray-100">
+                        <div className="prose prose-sm dark:prose-invert prose-p:leading-relaxed prose-pre:bg-gray-900 prose-pre:text-gray-100 max-w-none">
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                 {message.content}
                             </ReactMarkdown>
@@ -86,7 +130,12 @@ const MessageBubble: React.FC<{
                     <div className="mt-2 w-full max-w-md">
                         <AIActionCard
                             result={actionResult}
-                            onFocus={() => onHighlightTable?.(actionResult.targetId || '', 'table')}
+                            onFocus={() =>
+                                onHighlightTable?.(
+                                    actionResult.targetId || '',
+                                    'table'
+                                )
+                            }
                         />
                     </div>
                 )}
@@ -95,31 +144,40 @@ const MessageBubble: React.FC<{
     );
 };
 
-export const AIChatPanel: React.FC<AIChatPanelProps> = ({ sessionId, onHighlightTable }) => {
+export const AIChatPanel: React.FC<AIChatPanelProps> = ({
+    sessionId,
+    onHighlightTable,
+}) => {
     const [input, setInput] = useState('');
     const [showModelSelector, setShowModelSelector] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const [actionResults, setActionResults] = useState<Map<string, ActionResult>>(new Map());
-    
+    const [actionResults, setActionResults] = useState<
+        Map<string, ActionResult>
+    >(new Map());
+
     const chartDB = useChartDB();
     const reactFlowInstance = useReactFlow();
 
-    const { 
-        messages, 
-        isLoadingMessages, 
-        isSendingMessage, 
-        messageError, 
-        loadMessages, 
-        sendMessage, 
-        userConfig, 
+    const {
+        messages,
+        isLoadingMessages,
+        isSendingMessage,
+        messageError,
+        loadMessages,
+        sendMessage,
+        userConfig,
         loadConfig,
-        updateConfig 
+        updateConfig,
     } = useAIAssistantStore();
 
     // Local state for model selection
-    const [selectedProvider, setSelectedProvider] = useState(userConfig?.defaultProvider || 'mistral');
-    const [selectedModel, setSelectedModel] = useState(userConfig?.defaultModel || 'mistral-small-latest');
+    const [selectedProvider, setSelectedProvider] = useState(
+        userConfig?.defaultProvider || 'mistral'
+    );
+    const [selectedModel, setSelectedModel] = useState(
+        userConfig?.defaultModel || 'mistral-small-latest'
+    );
 
     // Available providers based on configured API keys
     const availableProviders = [
@@ -154,49 +212,55 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({ sessionId, onHighlight
             setSelectedModel(models[0]);
         }
     }, [selectedProvider, selectedModel]);
-    
+
     // Execute AI actions when messages arrive
     useEffect(() => {
         const processMessages = async () => {
             for (const message of messages) {
-                if (message.metadata?.functionName && 
-                    message.metadata?.arguments && 
+                if (
+                    message.metadata?.functionName &&
+                    message.metadata?.arguments &&
                     message.metadata?.result?.executeOnFrontend &&
-                    !actionResults.has(message.id)) {
-                    
+                    !actionResults.has(message.id)
+                ) {
                     try {
                         const functionCall = {
                             name: message.metadata.functionName,
                             arguments: message.metadata.arguments,
                         };
-                        
+
                         const result = await executeAIAction(functionCall, {
                             ...chartDB,
                             tables: chartDB.currentDiagram?.tables || [],
                         });
-                        
-                        setActionResults(prev => new Map(prev).set(message.id, result));
+
+                        setActionResults((prev) =>
+                            new Map(prev).set(message.id, result)
+                        );
                     } catch (error) {
                         console.error('Failed to execute AI action:', error);
                     }
                 }
             }
         };
-        
+
         processMessages();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [messages]);
-    
-    const handleFocusElement = (elementId: string, elementType: 'table' | 'column' | 'relationship') => {
+
+    const handleFocusElement = (
+        elementId: string,
+        elementType: 'table' | 'column' | 'relationship'
+    ) => {
         const nodes = reactFlowInstance?.getNodes() || [];
         const edges = reactFlowInstance?.getEdges() || [];
-        
+
         if (elementType === 'table') {
             focusOnTable(elementId, nodes, reactFlowInstance, {});
         } else if (elementType === 'relationship') {
             focusOnRelationship(elementId, edges, nodes, reactFlowInstance, {});
         }
-        
+
         if (onHighlightTable) {
             onHighlightTable(elementId);
         }
@@ -215,7 +279,10 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({ sessionId, onHighlight
         setInput('');
 
         // Update config with selected provider/model if changed
-        if (selectedProvider !== userConfig?.defaultProvider || selectedModel !== userConfig?.defaultModel) {
+        if (
+            selectedProvider !== userConfig?.defaultProvider ||
+            selectedModel !== userConfig?.defaultModel
+        ) {
             await updateConfig({
                 defaultProvider: selectedProvider,
                 defaultModel: selectedModel,
@@ -227,7 +294,7 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({ sessionId, onHighlight
                 content: messageContent,
                 includeContext: true,
             });
-        } catch (error) {
+        } catch {
             // Error handled by store
         }
     };
@@ -239,23 +306,32 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({ sessionId, onHighlight
         }
     };
 
-    const providerName = selectedProvider === 'openai' ? 'OpenAI' :
-                         selectedProvider === 'gemini' ? 'Gemini' :
-                         selectedProvider === 'claude' ? 'Claude' :
-                         selectedProvider === 'mistral' ? 'Mistral' :
-                         selectedProvider === 'deepseek' ? 'DeepSeek' : 'AI';
+    const providerName =
+        selectedProvider === 'openai'
+            ? 'OpenAI'
+            : selectedProvider === 'gemini'
+              ? 'Gemini'
+              : selectedProvider === 'claude'
+                ? 'Claude'
+                : selectedProvider === 'mistral'
+                  ? 'Mistral'
+                  : selectedProvider === 'deepseek'
+                    ? 'DeepSeek'
+                    : 'AI';
 
     return (
-        <Card className="h-full flex flex-col">
+        <Card className="flex h-full flex-col">
             <CardHeader className="border-b pb-3">
-                <div className="flex items-center justify-between mb-2">
+                <div className="mb-2 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                            <Bot className="h-5 w-5 text-white" />
+                        <div className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500">
+                            <Bot className="size-5 text-white" />
                         </div>
                         <div>
                             <CardTitle>AI Assistant</CardTitle>
-                            <CardDescription className="text-xs">Powered by {providerName}</CardDescription>
+                            <CardDescription className="text-xs">
+                                Powered by {providerName}
+                            </CardDescription>
                         </div>
                     </div>
                     <Button
@@ -264,23 +340,34 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({ sessionId, onHighlight
                         onClick={() => setShowModelSelector(!showModelSelector)}
                         className="h-8"
                     >
-                        <Settings className="mr-1 h-3 w-3" />
-                        <span className="text-xs">{selectedModel || 'Select Model'}</span>
+                        <Settings className="mr-1 size-3" />
+                        <span className="text-xs">
+                            {selectedModel || 'Select Model'}
+                        </span>
                     </Button>
                 </div>
-                
+
                 {showModelSelector && (
-                    <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border space-y-3">
+                    <div className="mt-3 space-y-3 rounded-lg border bg-gray-50 p-3 dark:bg-gray-900">
                         <div className="grid grid-cols-2 gap-2">
                             <div>
-                                <label className="text-xs font-medium mb-1 block">Provider</label>
-                                <Select value={selectedProvider} onValueChange={setSelectedProvider}>
+                                <label className="mb-1 block text-xs font-medium">
+                                    Provider
+                                </label>
+                                <Select
+                                    value={selectedProvider}
+                                    onValueChange={setSelectedProvider}
+                                >
                                     <SelectTrigger className="h-8 text-xs">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {availableProviders.map((p) => (
-                                            <SelectItem key={p.code} value={p.code} className="text-xs">
+                                            <SelectItem
+                                                key={p.code}
+                                                value={p.code}
+                                                className="text-xs"
+                                            >
                                                 {p.name}
                                             </SelectItem>
                                         ))}
@@ -288,14 +375,26 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({ sessionId, onHighlight
                                 </Select>
                             </div>
                             <div>
-                                <label className="text-xs font-medium mb-1 block">Model</label>
-                                <Select value={selectedModel} onValueChange={setSelectedModel}>
+                                <label className="mb-1 block text-xs font-medium">
+                                    Model
+                                </label>
+                                <Select
+                                    value={selectedModel}
+                                    onValueChange={setSelectedModel}
+                                >
                                     <SelectTrigger className="h-8 text-xs">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {(defaultModels[selectedProvider] || []).map((model) => (
-                                            <SelectItem key={model} value={model} className="text-xs">
+                                        {(
+                                            defaultModels[selectedProvider] ||
+                                            []
+                                        ).map((model) => (
+                                            <SelectItem
+                                                key={model}
+                                                value={model}
+                                                className="text-xs"
+                                            >
                                                 {model}
                                             </SelectItem>
                                         ))}
@@ -304,45 +403,54 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({ sessionId, onHighlight
                             </div>
                         </div>
                         <p className="text-xs text-gray-500">
-                            Switch models for different capabilities. Fast models for quick responses, larger models for complex tasks.
+                            Switch models for different capabilities. Fast
+                            models for quick responses, larger models for
+                            complex tasks.
                         </p>
                     </div>
                 )}
             </CardHeader>
 
-            <CardContent className="flex-1 flex flex-col p-0 overflow-hidden">
+            <CardContent className="flex flex-1 flex-col overflow-hidden p-0">
                 {/* Messages */}
-                <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div
+                    ref={scrollRef}
+                    className="flex-1 space-y-4 overflow-y-auto p-4"
+                >
                     {isLoadingMessages && (
-                        <div className="text-center py-8 text-gray-500">
-                            <Loader2 className="mx-auto h-8 w-8 animate-spin text-purple-500 mb-2" />
+                        <div className="py-8 text-center text-gray-500">
+                            <Loader2 className="mx-auto mb-2 size-8 animate-spin text-purple-500" />
                             <p className="text-sm">Loading conversation...</p>
                         </div>
                     )}
 
                     {!isLoadingMessages && messages.length === 0 && (
-                        <div className="text-center py-8">
-                            <div className="h-16 w-16 mx-auto rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-4">
-                                <Sparkles className="h-8 w-8 text-white" />
+                        <div className="py-8 text-center">
+                            <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500">
+                                <Sparkles className="size-8 text-white" />
                             </div>
-                            <h3 className="text-lg font-semibold mb-2">Start a Conversation</h3>
-                            <p className="text-sm text-gray-500 mb-6">
+                            <h3 className="mb-2 text-lg font-semibold">
+                                Start a Conversation
+                            </h3>
+                            <p className="mb-6 text-sm text-gray-500">
                                 Ask me anything about your database schema
                             </p>
-                            
+
                             {/* Quick Prompts */}
-                            <div className="grid grid-cols-1 gap-2 max-w-md mx-auto">
+                            <div className="mx-auto grid max-w-md grid-cols-1 gap-2">
                                 {quickPrompts.map((prompt, idx) => (
                                     <button
                                         key={idx}
                                         onClick={() => setInput(prompt.text)}
-                                        className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-800 border rounded-lg hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors text-left group"
+                                        className="group flex items-center gap-3 rounded-lg border bg-white px-4 py-3 text-left transition-colors hover:border-purple-500 hover:bg-purple-50 dark:bg-gray-800 dark:hover:bg-purple-900/20"
                                     >
-                                        <span className="text-2xl">{prompt.icon}</span>
-                                        <span className="text-sm text-gray-700 dark:text-gray-300 group-hover:text-purple-700 dark:group-hover:text-purple-400">
+                                        <span className="text-2xl">
+                                            {prompt.icon}
+                                        </span>
+                                        <span className="text-sm text-gray-700 group-hover:text-purple-700 dark:text-gray-300 dark:group-hover:text-purple-400">
                                             {prompt.text}
                                         </span>
-                                        <Zap className="ml-auto h-4 w-4 text-gray-400 group-hover:text-purple-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        <Zap className="ml-auto size-4 text-gray-400 opacity-0 transition-opacity group-hover:text-purple-500 group-hover:opacity-100" />
                                     </button>
                                 ))}
                             </div>
@@ -350,9 +458,9 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({ sessionId, onHighlight
                     )}
 
                     {messages.map((message) => (
-                        <MessageBubble 
-                            key={message.id} 
-                            message={message} 
+                        <MessageBubble
+                            key={message.id}
+                            message={message}
                             onHighlightTable={handleFocusElement}
                             actionResult={actionResults.get(message.id)}
                         />
@@ -360,15 +468,15 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({ sessionId, onHighlight
 
                     {isSendingMessage && (
                         <div className="flex gap-3">
-                            <div className="shrink-0 h-8 w-8 rounded-full bg-purple-500 flex items-center justify-center">
-                                <Bot className="h-4 w-4 text-white" />
+                            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-purple-500">
+                                <Bot className="size-4 text-white" />
                             </div>
                             <div className="flex-1">
-                                <div className="inline-block px-4 py-3 rounded-lg bg-gray-100 dark:bg-gray-800">
+                                <div className="inline-block rounded-lg bg-gray-100 px-4 py-3 dark:bg-gray-800">
                                     <div className="flex gap-2">
-                                        <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce"></div>
-                                        <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
-                                        <div className="h-2 w-2 bg-gray-400 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+                                        <div className="size-2 animate-bounce rounded-full bg-gray-400"></div>
+                                        <div className="size-2 animate-bounce rounded-full bg-gray-400 [animation-delay:0.2s]"></div>
+                                        <div className="size-2 animate-bounce rounded-full bg-gray-400 [animation-delay:0.4s]"></div>
                                     </div>
                                 </div>
                             </div>
@@ -379,26 +487,35 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({ sessionId, onHighlight
                 </div>
 
                 {/* Enhanced Input */}
-                <div className="border-t p-4 bg-gray-50 dark:bg-gray-900/50">
-                    <div className="flex gap-2 items-end">
+                <div className="border-t bg-gray-50 p-4 dark:bg-gray-900/50">
+                    <div className="flex items-end gap-2">
                         <div className="flex-1">
                             <Textarea
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={handleKeyDown}
                                 placeholder="Ask a question or describe what you want to do..."
-                                className="min-h-[80px] max-h-[200px] resize-none bg-white dark:bg-gray-800"
+                                className="max-h-[200px] min-h-[80px] resize-none bg-white dark:bg-gray-800"
                                 disabled={isSendingMessage}
                             />
-                            <div className="flex items-center justify-between mt-2">
+                            <div className="mt-2 flex items-center justify-between">
                                 <div className="flex items-center gap-2 text-xs text-gray-500">
                                     <span>
-                                        <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">Enter</kbd> to send
+                                        <kbd className="rounded bg-gray-200 px-1.5 py-0.5 text-xs dark:bg-gray-700">
+                                            Enter
+                                        </kbd>{' '}
+                                        to send
                                     </span>
                                     <span>•</span>
                                     <span>
-                                        <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">Shift</kbd> +{' '}
-                                        <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">Enter</kbd> for new line
+                                        <kbd className="rounded bg-gray-200 px-1.5 py-0.5 text-xs dark:bg-gray-700">
+                                            Shift
+                                        </kbd>{' '}
+                                        +{' '}
+                                        <kbd className="rounded bg-gray-200 px-1.5 py-0.5 text-xs dark:bg-gray-700">
+                                            Enter
+                                        </kbd>{' '}
+                                        for new line
                                     </span>
                                 </div>
                                 <span className="text-xs text-gray-400">
@@ -409,13 +526,13 @@ export const AIChatPanel: React.FC<AIChatPanelProps> = ({ sessionId, onHighlight
                         <Button
                             onClick={handleSendMessage}
                             disabled={!input.trim() || isSendingMessage}
-                            className="shrink-0 h-[80px] px-6 bg-gradient-to-br from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                            className="h-[80px] shrink-0 bg-gradient-to-br from-purple-500 to-pink-500 px-6 hover:from-purple-600 hover:to-pink-600"
                             size="lg"
                         >
                             {isSendingMessage ? (
-                                <Loader2 className="h-5 w-5 animate-spin" />
+                                <Loader2 className="size-5 animate-spin" />
                             ) : (
-                                <Send className="h-5 w-5" />
+                                <Send className="size-5" />
                             )}
                         </Button>
                     </div>

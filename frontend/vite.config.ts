@@ -24,7 +24,9 @@ const getGitCommit = () => {
 export default defineConfig({
     define: {
         'import.meta.env.VITE_BUILD_VERSION': JSON.stringify(
-            process.env.VITE_BUILD_VERSION || process.env.npm_package_version || '1.0.0'
+            process.env.VITE_BUILD_VERSION ||
+                process.env.npm_package_version ||
+                '1.0.0'
         ),
         'import.meta.env.VITE_BUILD_COMMIT': JSON.stringify(getGitCommit()),
         'import.meta.env.VITE_BUILD_TIME': JSON.stringify(

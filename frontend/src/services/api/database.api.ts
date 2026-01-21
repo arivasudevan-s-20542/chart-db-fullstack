@@ -10,7 +10,12 @@ import type {
     SavedQuery,
 } from '@/types/database.types';
 
-export type { DatabaseConnection, CreateConnectionRequest, TestConnectionRequest, TestConnectionResponse };
+export type {
+    DatabaseConnection,
+    CreateConnectionRequest,
+    TestConnectionRequest,
+    TestConnectionResponse,
+};
 
 export interface QueryExecutionResult {
     success: boolean;
@@ -30,17 +35,25 @@ export interface ExecuteQueryRequest {
 
 export const databaseApi = {
     // Connection Management
-    createConnection: async (request: CreateConnectionRequest): Promise<DatabaseConnection> => {
+    createConnection: async (
+        request: CreateConnectionRequest
+    ): Promise<DatabaseConnection> => {
         const response = await apiClient.post('/connections', request);
         return response.data.data;
     },
 
-    getConnectionsByDiagram: async (diagramId: string): Promise<DatabaseConnection[]> => {
-        const response = await apiClient.get(`/connections/diagram/${diagramId}`);
+    getConnectionsByDiagram: async (
+        diagramId: string
+    ): Promise<DatabaseConnection[]> => {
+        const response = await apiClient.get(
+            `/connections/diagram/${diagramId}`
+        );
         return response.data.data;
     },
 
-    getConnection: async (connectionId: string): Promise<DatabaseConnection> => {
+    getConnection: async (
+        connectionId: string
+    ): Promise<DatabaseConnection> => {
         const response = await apiClient.get(`/connections/${connectionId}`);
         return response.data.data;
     },
@@ -49,31 +62,51 @@ export const databaseApi = {
         await apiClient.delete(`/connections/${connectionId}`);
     },
 
-    testConnection: async (request: TestConnectionRequest): Promise<TestConnectionResponse> => {
+    testConnection: async (
+        request: TestConnectionRequest
+    ): Promise<TestConnectionResponse> => {
         const response = await apiClient.post('/connections/test', request);
         return response.data.data;
     },
 
-    testExistingConnection: async (connectionId: string): Promise<TestConnectionResponse> => {
-        const response = await apiClient.post(`/connections/${connectionId}/test`);
+    testExistingConnection: async (
+        connectionId: string
+    ): Promise<TestConnectionResponse> => {
+        const response = await apiClient.post(
+            `/connections/${connectionId}/test`
+        );
         return response.data.data;
     },
 
     // Query Execution
-    executeQuery: async (connectionId: string, request: QueryRequest): Promise<QueryResultResponse> => {
-        const response = await apiClient.post(`/queries/execute/${connectionId}`, { sql: request.sql, maxRows: request.maxRows });
+    executeQuery: async (
+        connectionId: string,
+        request: QueryRequest
+    ): Promise<QueryResultResponse> => {
+        const response = await apiClient.post(
+            `/queries/execute/${connectionId}`,
+            { sql: request.sql, maxRows: request.maxRows }
+        );
         return response.data.data;
     },
 
-    getQueryHistory: async (connectionId: string): Promise<QueryHistoryItem[]> => {
+    getQueryHistory: async (
+        connectionId: string
+    ): Promise<QueryHistoryItem[]> => {
         const response = await apiClient.get(`/queries/history`, {
             params: { connectionId },
         });
         return response.data.data;
     },
 
-    saveQuery: async (connectionId: string, request: { name: string; description?: string; sql: string }): Promise<SavedQuery> => {
-        const response = await apiClient.post('/queries/saved', { ...request, connectionId });
+    saveQuery: async (
+        connectionId: string,
+        request: { name: string; description?: string; sql: string }
+    ): Promise<SavedQuery> => {
+        const response = await apiClient.post('/queries/saved', {
+            ...request,
+            connectionId,
+        });
         return response.data.data;
     },
 

@@ -470,7 +470,10 @@ export const RealtimeSyncManager: React.FC = () => {
 
                     case 'AI_ACTION':
                         // AI made changes - reload the entire diagram to see the changes
-                        console.log('[RealtimeSync] AI action detected, reloading diagram:', event.payload);
+                        console.log(
+                            '[RealtimeSync] AI action detected, reloading diagram:',
+                            event.payload
+                        );
                         if (currentDiagramId) {
                             await loadDiagram(currentDiagramId);
                         }

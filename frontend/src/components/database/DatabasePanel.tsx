@@ -2,9 +2,14 @@ import React, { useState } from 'react';
 import { ConnectionModal } from './ConnectionModal';
 import { ConnectionList } from './ConnectionList';
 import { QueryEditor } from './QueryEditor';
-import { DatabaseConnection } from '@/types/database.types';
+import type { DatabaseConnection } from '@/types/database.types';
 import { useDatabaseConnectionStore } from '@/stores/database-connection.store';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/tabs/tabs';
+import {
+    Tabs,
+    TabsContent,
+    TabsList,
+    TabsTrigger,
+} from '@/components/tabs/tabs';
 
 interface DatabasePanelProps {
     diagramId: string;
@@ -12,23 +17,29 @@ interface DatabasePanelProps {
 
 export const DatabasePanel: React.FC<DatabasePanelProps> = ({ diagramId }) => {
     const [isConnectionModalOpen, setIsConnectionModalOpen] = useState(false);
-    const { connections, activeConnectionId, setActiveConnection } = useDatabaseConnectionStore();
+    const { connections, activeConnectionId, setActiveConnection } =
+        useDatabaseConnectionStore();
 
-    const activeConnection = connections.find((c) => c.id === activeConnectionId);
+    const activeConnection = connections.find(
+        (c) => c.id === activeConnectionId
+    );
 
     const handleSelectConnection = (connection: DatabaseConnection) => {
         setActiveConnection(connection.id);
     };
 
     return (
-        <div className="h-full flex flex-col">
-            <Tabs defaultValue="connections" className="flex-1 flex flex-col">
-                <TabsList className="w-full justify-start border-b rounded-none bg-transparent p-0">
-                    <TabsTrigger value="connections" className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500">
+        <div className="flex h-full flex-col">
+            <Tabs defaultValue="connections" className="flex flex-1 flex-col">
+                <TabsList className="w-full justify-start rounded-none border-b bg-transparent p-0">
+                    <TabsTrigger
+                        value="connections"
+                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500"
+                    >
                         Connections
                     </TabsTrigger>
-                    <TabsTrigger 
-                        value="query" 
+                    <TabsTrigger
+                        value="query"
                         className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-500"
                         disabled={!activeConnection}
                     >
@@ -40,7 +51,9 @@ export const DatabasePanel: React.FC<DatabasePanelProps> = ({ diagramId }) => {
                     <TabsContent value="connections" className="mt-0">
                         <ConnectionList
                             diagramId={diagramId}
-                            onAddConnection={() => setIsConnectionModalOpen(true)}
+                            onAddConnection={() =>
+                                setIsConnectionModalOpen(true)
+                            }
                             onSelectConnection={handleSelectConnection}
                         />
                     </TabsContent>
@@ -49,7 +62,7 @@ export const DatabasePanel: React.FC<DatabasePanelProps> = ({ diagramId }) => {
                         {activeConnection ? (
                             <QueryEditor connection={activeConnection} />
                         ) : (
-                            <div className="text-center py-12 text-gray-500">
+                            <div className="py-12 text-center text-gray-500">
                                 Select a connection to start querying
                             </div>
                         )}

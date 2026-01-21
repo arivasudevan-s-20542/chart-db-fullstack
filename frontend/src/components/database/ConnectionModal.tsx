@@ -1,12 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/dialog/dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from '@/components/dialog/dialog';
 import { Button } from '@/components/button/button';
 import { Input } from '@/components/input/input';
 import { Label } from '@/components/label/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/select/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/select/select';
 import { Alert, AlertDescription } from '@/components/alert/alert';
 import { useDatabaseConnectionStore } from '@/stores/database-connection.store';
-import { DatabaseType, CreateConnectionRequest } from '@/types/database.types';
+import type { CreateConnectionRequest } from '@/types/database.types';
+import { DatabaseType } from '@/types/database.types';
 import { Loader2, Check, X } from 'lucide-react';
 
 interface ConnectionModalProps {
@@ -22,7 +35,11 @@ const DEFAULT_PORTS: Record<DatabaseType, number> = {
     [DatabaseType.ORACLE]: 1521,
 };
 
-export const ConnectionModal: React.FC<ConnectionModalProps> = ({ isOpen, onClose, diagramId }) => {
+export const ConnectionModal: React.FC<ConnectionModalProps> = ({
+    isOpen,
+    onClose,
+    diagramId,
+}) => {
     const [formData, setFormData] = useState<CreateConnectionRequest>({
         diagramId,
         databaseType: DatabaseType.POSTGRESQL,
@@ -36,10 +53,14 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ isOpen, onClos
     });
 
     const [isTesting, setIsTesting] = useState(false);
-    const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+    const [testResult, setTestResult] = useState<{
+        success: boolean;
+        message: string;
+    } | null>(null);
     const [errors, setErrors] = useState<Record<string, string>>({});
 
-    const { createConnection, testConnection, connectionError, clearError } = useDatabaseConnectionStore();
+    const { createConnection, testConnection, connectionError, clearError } =
+        useDatabaseConnectionStore();
 
     // Reset form when modal opens
     useEffect(() => {
@@ -71,7 +92,10 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ isOpen, onClos
         setTestResult(null);
     };
 
-    const handleInputChange = (field: keyof CreateConnectionRequest, value: string | number) => {
+    const handleInputChange = (
+        field: keyof CreateConnectionRequest,
+        value: string | number
+    ) => {
         setFormData((prev) => ({
             ...prev,
             [field]: value,
@@ -129,12 +153,17 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ isOpen, onClos
 
             setTestResult({
                 success,
-                message: success ? 'Connection successful!' : 'Connection failed. Please check your credentials.',
+                message: success
+                    ? 'Connection successful!'
+                    : 'Connection failed. Please check your credentials.',
             });
         } catch (error) {
             setTestResult({
                 success: false,
-                message: error instanceof Error ? error.message : 'Connection test failed',
+                message:
+                    error instanceof Error
+                        ? error.message
+                        : 'Connection test failed',
             });
         } finally {
             setIsTesting(false);
@@ -149,7 +178,7 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ isOpen, onClos
         try {
             await createConnection(formData);
             onClose();
-        } catch (error) {
+        } catch {
             // Error is handled by the store
         }
     };
@@ -168,25 +197,42 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ isOpen, onClos
                         <Input
                             id="name"
                             value={formData.name}
-                            onChange={(e) => handleInputChange('name', e.target.value)}
+                            onChange={(e) =>
+                                handleInputChange('name', e.target.value)
+                            }
                             placeholder="Production Database"
                             className={errors.name ? 'border-red-500' : ''}
                         />
-                        {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
+                        {errors.name && (
+                            <p className="text-sm text-red-500">
+                                {errors.name}
+                            </p>
+                        )}
                     </div>
 
                     {/* Database Type */}
                     <div className="space-y-2">
                         <Label htmlFor="databaseType">Database Type *</Label>
-                        <Select value={formData.databaseType} onValueChange={handleDatabaseTypeChange}>
+                        <Select
+                            value={formData.databaseType}
+                            onValueChange={handleDatabaseTypeChange}
+                        >
                             <SelectTrigger>
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value={DatabaseType.POSTGRESQL}>PostgreSQL</SelectItem>
-                                <SelectItem value={DatabaseType.MYSQL}>MySQL</SelectItem>
-                                <SelectItem value={DatabaseType.SQL_SERVER}>SQL Server</SelectItem>
-                                <SelectItem value={DatabaseType.ORACLE}>Oracle</SelectItem>
+                                <SelectItem value={DatabaseType.POSTGRESQL}>
+                                    PostgreSQL
+                                </SelectItem>
+                                <SelectItem value={DatabaseType.MYSQL}>
+                                    MySQL
+                                </SelectItem>
+                                <SelectItem value={DatabaseType.SQL_SERVER}>
+                                    SQL Server
+                                </SelectItem>
+                                <SelectItem value={DatabaseType.ORACLE}>
+                                    Oracle
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -198,11 +244,17 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ isOpen, onClos
                             <Input
                                 id="host"
                                 value={formData.host}
-                                onChange={(e) => handleInputChange('host', e.target.value)}
+                                onChange={(e) =>
+                                    handleInputChange('host', e.target.value)
+                                }
                                 placeholder="localhost"
                                 className={errors.host ? 'border-red-500' : ''}
                             />
-                            {errors.host && <p className="text-sm text-red-500">{errors.host}</p>}
+                            {errors.host && (
+                                <p className="text-sm text-red-500">
+                                    {errors.host}
+                                </p>
+                            )}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="port">Port *</Label>
@@ -210,7 +262,12 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ isOpen, onClos
                                 id="port"
                                 type="number"
                                 value={formData.port}
-                                onChange={(e) => handleInputChange('port', parseInt(e.target.value))}
+                                onChange={(e) =>
+                                    handleInputChange(
+                                        'port',
+                                        parseInt(e.target.value)
+                                    )
+                                }
                             />
                         </div>
                     </div>
@@ -221,11 +278,22 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ isOpen, onClos
                         <Input
                             id="databaseName"
                             value={formData.databaseName}
-                            onChange={(e) => handleInputChange('databaseName', e.target.value)}
+                            onChange={(e) =>
+                                handleInputChange(
+                                    'databaseName',
+                                    e.target.value
+                                )
+                            }
                             placeholder="mydb"
-                            className={errors.databaseName ? 'border-red-500' : ''}
+                            className={
+                                errors.databaseName ? 'border-red-500' : ''
+                            }
                         />
-                        {errors.databaseName && <p className="text-sm text-red-500">{errors.databaseName}</p>}
+                        {errors.databaseName && (
+                            <p className="text-sm text-red-500">
+                                {errors.databaseName}
+                            </p>
+                        )}
                     </div>
 
                     {/* Username */}
@@ -234,11 +302,17 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ isOpen, onClos
                         <Input
                             id="username"
                             value={formData.username}
-                            onChange={(e) => handleInputChange('username', e.target.value)}
+                            onChange={(e) =>
+                                handleInputChange('username', e.target.value)
+                            }
                             placeholder="dbuser"
                             className={errors.username ? 'border-red-500' : ''}
                         />
-                        {errors.username && <p className="text-sm text-red-500">{errors.username}</p>}
+                        {errors.username && (
+                            <p className="text-sm text-red-500">
+                                {errors.username}
+                            </p>
+                        )}
                     </div>
 
                     {/* Password */}
@@ -248,11 +322,17 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ isOpen, onClos
                             id="password"
                             type="password"
                             value={formData.password}
-                            onChange={(e) => handleInputChange('password', e.target.value)}
+                            onChange={(e) =>
+                                handleInputChange('password', e.target.value)
+                            }
                             placeholder="••••••••"
                             className={errors.password ? 'border-red-500' : ''}
                         />
-                        {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
+                        {errors.password && (
+                            <p className="text-sm text-red-500">
+                                {errors.password}
+                            </p>
+                        )}
                     </div>
 
                     {/* Environment */}
@@ -260,29 +340,41 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ isOpen, onClos
                         <Label htmlFor="environment">Environment</Label>
                         <Select
                             value={formData.environment}
-                            onValueChange={(value) => handleInputChange('environment', value)}
+                            onValueChange={(value) =>
+                                handleInputChange('environment', value)
+                            }
                         >
                             <SelectTrigger>
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="development">Development</SelectItem>
+                                <SelectItem value="development">
+                                    Development
+                                </SelectItem>
                                 <SelectItem value="staging">Staging</SelectItem>
-                                <SelectItem value="production">Production</SelectItem>
+                                <SelectItem value="production">
+                                    Production
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     {/* Test Connection Result */}
                     {testResult && (
-                        <Alert variant={testResult.success ? 'default' : 'destructive'}>
+                        <Alert
+                            variant={
+                                testResult.success ? 'default' : 'destructive'
+                            }
+                        >
                             <div className="flex items-center gap-2">
                                 {testResult.success ? (
-                                    <Check className="h-4 w-4 text-green-500" />
+                                    <Check className="size-4 text-green-500" />
                                 ) : (
-                                    <X className="h-4 w-4 text-red-500" />
+                                    <X className="size-4 text-red-500" />
                                 )}
-                                <AlertDescription>{testResult.message}</AlertDescription>
+                                <AlertDescription>
+                                    {testResult.message}
+                                </AlertDescription>
                             </div>
                         </Alert>
                     )}
@@ -290,7 +382,9 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ isOpen, onClos
                     {/* Connection Error */}
                     {connectionError && (
                         <Alert variant="destructive">
-                            <AlertDescription>{connectionError}</AlertDescription>
+                            <AlertDescription>
+                                {connectionError}
+                            </AlertDescription>
                         </Alert>
                     )}
                 </div>
@@ -299,17 +393,27 @@ export const ConnectionModal: React.FC<ConnectionModalProps> = ({ isOpen, onClos
                     <Button variant="outline" onClick={onClose}>
                         Cancel
                     </Button>
-                    <Button variant="secondary" onClick={handleTestConnection} disabled={isTesting}>
+                    <Button
+                        variant="secondary"
+                        onClick={handleTestConnection}
+                        disabled={isTesting}
+                    >
                         {isTesting ? (
                             <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                <Loader2 className="mr-2 size-4 animate-spin" />
                                 Testing...
                             </>
                         ) : (
                             'Test Connection'
                         )}
                     </Button>
-                    <Button onClick={handleSave} disabled={isTesting || (testResult !== null && !testResult.success)}>
+                    <Button
+                        onClick={handleSave}
+                        disabled={
+                            isTesting ||
+                            (testResult !== null && !testResult.success)
+                        }
+                    >
                         Save Connection
                     </Button>
                 </DialogFooter>

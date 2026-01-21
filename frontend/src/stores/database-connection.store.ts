@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import {
+import type {
     DatabaseConnection,
     CreateConnectionRequest,
     TestConnectionRequest,
@@ -8,8 +8,8 @@ import {
     QueryResultResponse,
     QueryHistoryItem,
     SavedQuery,
-    ConnectionStatus,
 } from '@/types/database.types';
+import { ConnectionStatus } from '@/types/database.types';
 import { databaseApi } from '@/services/api/database.api';
 
 interface DatabaseConnectionState {
@@ -34,14 +34,24 @@ interface DatabaseConnectionState {
 
     // Actions
     loadConnections: (diagramId: string) => Promise<void>;
-    createConnection: (request: CreateConnectionRequest) => Promise<DatabaseConnection>;
+    createConnection: (
+        request: CreateConnectionRequest
+    ) => Promise<DatabaseConnection>;
     deleteConnection: (connectionId: string) => Promise<void>;
     testConnection: (request: TestConnectionRequest) => Promise<boolean>;
     testExistingConnection: (connectionId: string) => Promise<boolean>;
     setActiveConnection: (connectionId: string | null) => void;
-    executeQuery: (connectionId: string, request: QueryRequest) => Promise<void>;
+    executeQuery: (
+        connectionId: string,
+        request: QueryRequest
+    ) => Promise<void>;
     loadQueryHistory: (connectionId: string) => Promise<void>;
-    saveQuery: (connectionId: string, name: string, description: string, sql: string) => Promise<void>;
+    saveQuery: (
+        connectionId: string,
+        name: string,
+        description: string,
+        sql: string
+    ) => Promise<void>;
     loadSavedQueries: (connectionId: string) => Promise<void>;
     clearQueryResults: () => void;
     clearError: () => void;
@@ -67,11 +77,15 @@ export const useDatabaseConnectionStore = create<DatabaseConnectionState>()(
             loadConnections: async (diagramId: string) => {
                 set({ isLoadingConnections: true, connectionError: null });
                 try {
-                    const connections = await databaseApi.getConnectionsByDiagram(diagramId);
+                    const connections =
+                        await databaseApi.getConnectionsByDiagram(diagramId);
                     set({ connections, isLoadingConnections: false });
                 } catch (error) {
                     set({
-                        connectionError: error instanceof Error ? error.message : 'Failed to load connections',
+                        connectionError:
+                            error instanceof Error
+                                ? error.message
+                                : 'Failed to load connections',
                         isLoadingConnections: false,
                     });
                 }
@@ -81,13 +95,17 @@ export const useDatabaseConnectionStore = create<DatabaseConnectionState>()(
             createConnection: async (request: CreateConnectionRequest) => {
                 set({ connectionError: null });
                 try {
-                    const connection = await databaseApi.createConnection(request);
+                    const connection =
+                        await databaseApi.createConnection(request);
                     set((state) => ({
                         connections: [...state.connections, connection],
                     }));
                     return connection;
                 } catch (error) {
-                    const message = error instanceof Error ? error.message : 'Failed to create connection';
+                    const message =
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to create connection';
                     set({ connectionError: message });
                     throw error;
                 }
@@ -99,12 +117,19 @@ export const useDatabaseConnectionStore = create<DatabaseConnectionState>()(
                 try {
                     await databaseApi.deleteConnection(connectionId);
                     set((state) => ({
-                        connections: state.connections.filter((c) => c.id !== connectionId),
+                        connections: state.connections.filter(
+                            (c) => c.id !== connectionId
+                        ),
                         activeConnectionId:
-                            state.activeConnectionId === connectionId ? null : state.activeConnectionId,
+                            state.activeConnectionId === connectionId
+                                ? null
+                                : state.activeConnectionId,
                     }));
                 } catch (error) {
-                    const message = error instanceof Error ? error.message : 'Failed to delete connection';
+                    const message =
+                        error instanceof Error
+                            ? error.message
+                            : 'Failed to delete connection';
                     set({ connectionError: message });
                     throw error;
                 }
@@ -115,7 +140,7 @@ export const useDatabaseConnectionStore = create<DatabaseConnectionState>()(
                 try {
                     const result = await databaseApi.testConnection(request);
                     return result.success;
-                } catch (error) {
+                } catch {
                     return false;
                 }
             },
@@ -123,40 +148,58 @@ export const useDatabaseConnectionStore = create<DatabaseConnectionState>()(
             // Test an existing connection
             testExistingConnection: async (connectionId: string) => {
                 try {
-                    const result = await databaseApi.testExistingConnection(connectionId);
+                    const result =
+                        await databaseApi.testExistingConnection(connectionId);
                     // Update connection status
                     set((state) => ({
                         connections: state.connections.map((c) =>
                             c.id === connectionId
                                 ? {
                                       ...c,
-                                      status: result.success ? ConnectionStatus.ONLINE : ConnectionStatus.ERROR,
+                                      status: result.success
+                                          ? ConnectionStatus.ONLINE
+                                          : ConnectionStatus.ERROR,
                                       lastTestedAt: new Date().toISOString(),
-                                      lastError: result.success ? undefined : result.message,
+                                      lastError: result.success
+                                          ? undefined
+                                          : result.message,
                                   }
                                 : c
                         ),
                     }));
                     return result.success;
-                } catch (error) {
+                } catch {
                     return false;
                 }
             },
 
             // Set active connection
             setActiveConnection: (connectionId: string | null) => {
-                set({ activeConnectionId: connectionId, queryResults: null, queryError: null });
+                set({
+                    activeConnectionId: connectionId,
+                    queryResults: null,
+                    queryError: null,
+                });
             },
 
             // Execute a query
-            executeQuery: async (connectionId: string, request: QueryRequest) => {
+            executeQuery: async (
+                connectionId: string,
+                request: QueryRequest
+            ) => {
                 set({ isExecutingQuery: true, queryError: null });
                 try {
-                    const results = await databaseApi.executeQuery(connectionId, request);
+                    const results = await databaseApi.executeQuery(
+                        connectionId,
+                        request
+                    );
                     set({ queryResults: results, isExecutingQuery: false });
                 } catch (error) {
                     set({
-                        queryError: error instanceof Error ? error.message : 'Failed to execute query',
+                        queryError:
+                            error instanceof Error
+                                ? error.message
+                                : 'Failed to execute query',
                         isExecutingQuery: false,
                     });
                 }
@@ -166,32 +209,42 @@ export const useDatabaseConnectionStore = create<DatabaseConnectionState>()(
             loadQueryHistory: async (connectionId: string) => {
                 set({ isLoadingHistory: true });
                 try {
-                    const history = await databaseApi.getQueryHistory(connectionId);
+                    const history =
+                        await databaseApi.getQueryHistory(connectionId);
                     set({ queryHistory: history, isLoadingHistory: false });
-                } catch (error) {
+                } catch {
                     set({ isLoadingHistory: false });
                 }
             },
 
             // Save a query
-            saveQuery: async (connectionId: string, name: string, description: string, sql: string) => {
-                try {
-                    const savedQuery = await databaseApi.saveQuery(connectionId, { name, description, sql });
-                    set((state) => ({
-                        savedQueries: [...state.savedQueries, savedQuery],
-                    }));
-                } catch (error) {
-                    throw error;
-                }
+            saveQuery: async (
+                connectionId: string,
+                name: string,
+                description: string,
+                sql: string
+            ) => {
+                const savedQuery = await databaseApi.saveQuery(connectionId, {
+                    name,
+                    description,
+                    sql,
+                });
+                set((state) => ({
+                    savedQueries: [...state.savedQueries, savedQuery],
+                }));
             },
 
             // Load saved queries
             loadSavedQueries: async (connectionId: string) => {
                 set({ isLoadingSavedQueries: true });
                 try {
-                    const queries = await databaseApi.getSavedQueries(connectionId);
-                    set({ savedQueries: queries, isLoadingSavedQueries: false });
-                } catch (error) {
+                    const queries =
+                        await databaseApi.getSavedQueries(connectionId);
+                    set({
+                        savedQueries: queries,
+                        isLoadingSavedQueries: false,
+                    });
+                } catch {
                     set({ isLoadingSavedQueries: false });
                 }
             },

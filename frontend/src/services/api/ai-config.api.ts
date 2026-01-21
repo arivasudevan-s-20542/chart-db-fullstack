@@ -31,9 +31,8 @@ export interface ApiResponse<T> {
 export const aiConfigApi = {
     // Get current AI configuration
     getConfig: async (): Promise<AIConfigResponse> => {
-        const response = await apiClient.get<ApiResponse<AIConfigResponse>>(
-            '/ai/config'
-        );
+        const response =
+            await apiClient.get<ApiResponse<AIConfigResponse>>('/ai/config');
         return response.data.data;
     },
 

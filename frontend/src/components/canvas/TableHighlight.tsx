@@ -26,7 +26,7 @@ export const TableHighlight: React.FC<TableHighlightProps> = ({
 
     return (
         <motion.div
-            className="absolute inset-0 pointer-events-none"
+            className="pointer-events-none absolute inset-0"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{
                 opacity: [0, 1, 1, 0],
@@ -69,7 +69,9 @@ export const ElementHighlighter: React.FC<ElementHighlighterProps> = ({
  * Hook to manage table highlighting state
  */
 export const useTableHighlight = () => {
-    const [highlightedTables, setHighlightedTables] = useState<Set<string>>(new Set());
+    const [highlightedTables, setHighlightedTables] = useState<Set<string>>(
+        new Set()
+    );
 
     const highlightTable = (tableId: string) => {
         setHighlightedTables(new Set([tableId]));
@@ -116,7 +118,9 @@ export const useCanvasPanZoom = (reactFlowInstance: any) => {
     const panToTables = (tableIds: string[], duration: number = 500) => {
         if (!reactFlowInstance || tableIds.length === 0) return;
 
-        const nodes = tableIds.map((id) => reactFlowInstance.getNode(id)).filter(Boolean);
+        const nodes = tableIds
+            .map((id) => reactFlowInstance.getNode(id))
+            .filter(Boolean);
         if (nodes.length === 0) return;
 
         reactFlowInstance.fitView({
