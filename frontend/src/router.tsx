@@ -181,6 +181,16 @@ const routes: RouteObject[] = [
         },
     },
     {
+        path: 'settings',
+        async lazy() {
+            const { SettingsPage } =
+                await import('./pages/settings-page/settings-page');
+            return {
+                element: <SettingsPage />,
+            };
+        },
+    },
+    {
         path: '*',
         async lazy() {
             const { NotFoundPage } =

@@ -18,6 +18,8 @@ import {
     FolderOpen,
     CodeXml,
     Database,
+    Bot,
+    Cable,
 } from 'lucide-react';
 import { Table, Workflow } from 'lucide-react';
 import { useLayout } from '@/hooks/use-layout';
@@ -137,6 +139,24 @@ export const EditorSidebar: React.FC<EditorSidebarProps> = () => {
                     selectVisualsTab('areas');
                 },
                 active: selectedSidebarSection === 'visuals',
+            },
+            {
+                title: 'AI Assistant',
+                icon: Bot,
+                onClick: () => {
+                    showSidePanel();
+                    selectSidebarSection('ai');
+                },
+                active: selectedSidebarSection === 'ai',
+            },
+            {
+                title: 'Connections',
+                icon: Cable,
+                onClick: () => {
+                    showSidePanel();
+                    selectSidebarSection('connections');
+                },
+                active: selectedSidebarSection === 'connections',
             },
         ],
         [

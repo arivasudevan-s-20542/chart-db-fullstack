@@ -37,6 +37,7 @@ export const RealtimeSyncManager: React.FC = () => {
         addNote,
         updateNote,
         removeNote,
+        loadDiagram,
     } = useChartDB();
 
     // Track if we're applying remote changes to avoid echo
@@ -467,6 +468,14 @@ export const RealtimeSyncManager: React.FC = () => {
                         );
                         break;
 
+                    case 'AI_ACTION':
+                        // AI made changes - reload the entire diagram to see the changes
+                        console.log('[RealtimeSync] AI action detected, reloading diagram:', event.payload);
+                        if (currentDiagramId) {
+                            await loadDiagram(currentDiagramId);
+                        }
+                        break;
+
                     default:
                         // Cursor, selection, lock events are handled elsewhere
                         break;
@@ -507,6 +516,7 @@ export const RealtimeSyncManager: React.FC = () => {
         addNote,
         updateNote,
         removeNote,
+        loadDiagram,
     ]);
 
     // This component doesn't render anything

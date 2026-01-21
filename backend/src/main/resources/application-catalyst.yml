@@ -5,10 +5,23 @@ spring:
   application:
     name: chartdb-backend-catalyst
   
-  # JPA Configuration for Catalyst Data Store
+  # PostgreSQL Database (Catalyst Cloud SQL or external)
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/chartdb}
+    username: ${DATABASE_USERNAME:chartdb}
+    password: ${DATABASE_PASSWORD:chartdb}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  # JPA Configuration
   jpa:
     hibernate:
-      ddl-auto: update  # Catalyst handles schema via Data Store
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:
@@ -18,9 +31,10 @@ spring:
           time_zone: UTC
     open-in-view: false
   
-  # Disable Flyway in Catalyst (use Data Store migrations)
+  # Enable Flyway for database migrations
   flyway:
-    enabled: false
+    enabled: true
+    baseline-on-migrate: true
   
   # Jackson Configuration
   jackson:

@@ -1,6 +1,6 @@
 # Development environment configuration
 server:
-  address: 0.0.0.0  # Bind to all network interfaces for LAN access
+  address: localhost  # Use localhost for faster DNS resolution in dev
 
 spring:
   # PostgreSQL Development Database
@@ -24,18 +24,26 @@ spring:
       hibernate:
         format_sql: true
   
-  # Redis Development (optional)
+  # Redis Development (disabled for faster startup)
   data:
     redis:
       host: localhost
       port: 6379
-      timeout: 2000
+      timeout: 500
+      connect-timeout: 500
+  redis:
+    enabled: false  # Disable Redis in dev to avoid connection delays
 
 # Development JWT (use secure key in production!)
 jwt:
   secret: dev-secret-key-for-testing-only-change-in-production-32-characters-minimum
   access-token-expiration: 86400000     # 24 hours (for easier dev testing)
   refresh-token-expiration: 2592000000  # 30 days
+
+# Development Security Settings
+security:
+  bcrypt:
+    strength: 4  # Fast for dev (default: 10 for production)
 
 # Development CORS (allow all in dev)
 cors:

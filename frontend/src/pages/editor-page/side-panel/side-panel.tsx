@@ -19,12 +19,14 @@ import { DBMLSection } from './dbml-section/dbml-section';
 import { RefsSection } from './refs-section/refs-section';
 import { VisualsSection } from './visuals-section/visuals-section';
 import { DataDictionarySection } from './data-dictionary-section/data-dictionary-section';
+import { AIAssistantPanel } from '@/components/ai/AIAssistantPanel';
+import { DatabasePanel } from '@/components/database/DatabasePanel';
 
 export interface SidePanelProps {}
 
 export const SidePanel: React.FC<SidePanelProps> = () => {
     const { t } = useTranslation();
-    const { databaseType } = useChartDB();
+    const { databaseType, diagramId } = useChartDB();
     const { selectSidebarSection, selectedSidebarSection } = useLayout();
     const { isMd: isDesktop } = useBreakpoint('md');
 
@@ -68,6 +70,12 @@ export const SidePanel: React.FC<SidePanelProps> = () => {
                                 <SelectItem value="dataDictionary">
                                     Data Dictionary
                                 </SelectItem>
+                                <SelectItem value="ai">
+                                    AI Assistant
+                                </SelectItem>
+                                <SelectItem value="connections">
+                                    Database Connections
+                                </SelectItem>
                             </SelectGroup>
                         </SelectContent>
                     </Select>
@@ -79,6 +87,10 @@ export const SidePanel: React.FC<SidePanelProps> = () => {
                 <DBMLSection />
             ) : selectedSidebarSection === 'refs' ? (
                 <RefsSection />
+            ) : selectedSidebarSection === 'ai' ? (
+                <AIAssistantPanel diagramId={diagramId} />
+            ) : selectedSidebarSection === 'connections' ? (
+                <DatabasePanel diagramId={diagramId} />
             ) : selectedSidebarSection === 'visuals' ? (
                 <VisualsSection />
             ) : selectedSidebarSection === 'dataDictionary' ? (

@@ -59,6 +59,9 @@ public class SecurityConfig {
     @Value("${cors.allowed-origins:http://localhost:5173,http://localhost:3000}")
     private List<String> allowedOrigins;
     
+    @Value("${security.bcrypt.strength:10}")
+    private int bcryptStrength;
+    
     public SecurityConfig(
             CustomUserDetailsService customUserDetailsService,
             JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
@@ -72,7 +75,8 @@ public class SecurityConfig {
     
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        // Configurable BCrypt strength per environment
+        return new BCryptPasswordEncoder(bcryptStrength);
     }
     
     @Bean

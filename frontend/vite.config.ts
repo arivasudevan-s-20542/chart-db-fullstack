@@ -56,13 +56,13 @@ export default defineConfig({
         proxy: {
             // Proxy API requests to backend
             '/api': {
-                target: 'http://192.168.31.243:8080',
+                target: 'http://localhost:8080',
                 changeOrigin: true,
                 secure: false,
             },
             // Proxy WebSocket requests
             '/ws': {
-                target: 'http://192.168.31.243:8080',
+                target: 'http://localhost:8080',
                 changeOrigin: true,
                 ws: true,
             },

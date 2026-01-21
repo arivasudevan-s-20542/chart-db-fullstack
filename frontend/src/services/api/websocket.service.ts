@@ -29,7 +29,8 @@ export type DiagramEventType =
     | 'CURSOR_MOVED'
     | 'SELECTION_CHANGED'
     | 'ELEMENT_LOCKED'
-    | 'ELEMENT_UNLOCKED';
+    | 'ELEMENT_UNLOCKED'
+    | 'AI_ACTION';
 
 export interface DiagramEvent {
     type: DiagramEventType;

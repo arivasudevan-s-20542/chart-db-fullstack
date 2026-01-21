@@ -15,63 +15,31 @@ on:
           - Production
 
 env:
-  # Variables (non-sensitive - configure in Settings → Variables)
   CATALYST_PROJECT_ID: ${{ vars.CATALYST_PROJECT_ID }}
   CATALYST_ORG_ID: ${{ vars.CATALYST_ORG_ID }}
   NODE_VERSION: '20'
-  JAVA_VERSION: '21'
+  JAVA_VERSION: '17'
 
 jobs:
-  # ==========================================
-  # Build Backend for Catalyst
-  # ==========================================
-  build-backend:
-    name: Build Backend
+  deploy-to-catalyst:
+    name: Build & Deploy to Catalyst
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./backend
+    environment: ${{ github.event.inputs.environment || 'Development' }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDK 17 (Catalyst compatible)
         uses: actions/setup-java@v4
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
           cache: maven
 
-      - name: Build with Maven (Catalyst profile)
-        run: |
-          mvn clean package -DskipTests -Pcatalyst
-
-      - name: Prepare Catalyst function package
-        run: |
-          mkdir -p ../catalyst/functions/chartdb_backend/lib
-          cp target/*.jar ../catalyst/functions/chartdb_backend/lib/
-          
-      - name: Upload backend artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: catalyst-backend
-          path: catalyst/functions/chartdb_backend/
-          retention-days: 1
-
-  # ==========================================
-  # Build Frontend for Catalyst
-  # ==========================================
-  build-frontend:
-    name: Build Frontend
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./frontend
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Build Backend with Maven (Catalyst profile)
+        working-directory: ./backend
+        run: mvn clean package -DskipTests -Pcatalyst
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -80,104 +48,59 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install dependencies
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
         run: npm ci
 
-      - name: Build for Catalyst
+      - name: Build Frontend for Catalyst
+        working-directory: ./frontend
         run: npm run build
         env:
-          # Catalyst serves API from same domain with /server/ prefix
-          VITE_API_URL: /server/chartdb_backend/api
-          VITE_WS_URL: /server/chartdb_backend/ws
+          VITE_API_URL: /api
+          VITE_WS_URL: /ws
           VITE_BUILD_VERSION: ${{ github.run_number }}
           VITE_BUILD_COMMIT: ${{ github.sha }}
-          VITE_BUILD_TIME: ${{ github.event.head_commit.timestamp }}
 
-      - name: Prepare Catalyst client package
+      - name: Prepare Catalyst Client Directory
         run: |
-          mkdir -p ../catalyst/client
-          cp -r dist/* ../catalyst/client/
-
-      - name: Upload frontend artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: catalyst-frontend
-          path: catalyst/client/
-          retention-days: 1
-
-  # ==========================================
-  # Deploy to Zoho Catalyst
-  # ==========================================
-  deploy-to-catalyst:
-    name: Deploy to Catalyst
-    runs-on: ubuntu-latest
-    needs: [build-backend, build-frontend]
-    environment: ${{ github.event.inputs.environment || 'Development' }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download backend artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: catalyst-backend
-          path: catalyst/functions/chartdb_backend/
-
-      - name: Download frontend artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: catalyst-frontend
-          path: catalyst/client/
-
-      - name: Set up Node.js (for Catalyst CLI)
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
+          mkdir -p catalyst/client
+          cp -r frontend/dist/* catalyst/client/
+          ls -la backend/target/*.jar
 
       - name: Install Catalyst CLI
         run: npm install -g zcatalyst-cli
 
       - name: Authenticate with Catalyst
         run: |
-          echo "${{ secrets.CATALYST_REFRESH_TOKEN }}" > ~/.catalyst_token
-          catalyst auth:login --token-file ~/.catalyst_token
+          mkdir -p ~/.catalyst
+          echo '{
+            "client_id": "${{ secrets.CATALYST_CLIENT_ID }}",
+            "client_secret": "${{ secrets.CATALYST_CLIENT_SECRET }}",
+            "refresh_token": "${{ secrets.CATALYST_REFRESH_TOKEN }}",
+            "access_token": "",
+            "token_type": "Bearer"
+          }' > ~/.catalyst/credentials.json
         env:
           CATALYST_ORG_ID: ${{ vars.CATALYST_ORG_ID }}
 
-      - name: Deploy to Catalyst
+      - name: Initialize Catalyst Project
+        working-directory: ./catalyst
+        run: catalyst init --project ${{ vars.CATALYST_PROJECT_ID }} --org ${{ vars.CATALYST_ORG_ID }} || true
+
+      - name: Deploy to Catalyst AppSail
         working-directory: ./catalyst
         run: |
+          echo "Deploying to Catalyst..."
+          echo "Project ID: ${{ vars.CATALYST_PROJECT_ID }}"
           catalyst deploy --project ${{ vars.CATALYST_PROJECT_ID }}
         env:
           CATALYST_ORG_ID: ${{ vars.CATALYST_ORG_ID }}
-          CATALYST_PROJECT_ID: ${{ vars.CATALYST_PROJECT_ID }}
 
-      - name: Set Catalyst Environment Variables
+      - name: Configure Catalyst Environment Variables
         working-directory: ./catalyst
+        continue-on-error: true
         run: |
-          # Set environment variables in Catalyst
-          catalyst env:set JWT_SECRET="${{ secrets.JWT_SECRET }}" \
-            --project ${{ vars.CATALYST_PROJECT_ID }}
-          
-          # OAuth2 credentials (if configured)
-          if [ -n "${{ secrets.GOOGLE_CLIENT_ID }}" ]; then
-            catalyst env:set GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
-              GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
-              --project ${{ vars.CATALYST_PROJECT_ID }}
-          fi
-          
-          if [ -n "${{ secrets.GITHUB_CLIENT_ID }}" ]; then
-            catalyst env:set GITHUB_CLIENT_ID="${{ secrets.GITHUB_CLIENT_ID }}" \
-              GITHUB_CLIENT_SECRET="${{ secrets.GITHUB_CLIENT_SECRET }}" \
-              --project ${{ vars.CATALYST_PROJECT_ID }}
-          fi
-          
-          if [ -n "${{ secrets.ZOHO_CLIENT_ID }}" ]; then
-            catalyst env:set ZOHO_CLIENT_ID="${{ secrets.ZOHO_CLIENT_ID }}" \
-              ZOHO_CLIENT_SECRET="${{ secrets.ZOHO_CLIENT_SECRET }}" \
-              --project ${{ vars.CATALYST_PROJECT_ID }}
-          fi
+          catalyst env:set JWT_SECRET="${{ secrets.JWT_SECRET }}" SPRING_PROFILES_ACTIVE="catalyst" --project ${{ vars.CATALYST_PROJECT_ID }} --appsail chartdb-backend || true
 
       - name: Deployment Summary
         run: |
@@ -185,8 +108,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Project ID:** ${{ vars.CATALYST_PROJECT_ID }}" >> $GITHUB_STEP_SUMMARY
           echo "**Environment:** ${{ github.event.inputs.environment || 'Development' }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Java Version:** ${{ env.JAVA_VERSION }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Access URLs" >> $GITHUB_STEP_SUMMARY
-          echo "- **Web Client:** https://chartdb-${{ vars.CATALYST_PROJECT_ID }}.catalyst.zoho.com" >> $GITHUB_STEP_SUMMARY
-          echo "- **API Endpoint:** https://chartdb-${{ vars.CATALYST_PROJECT_ID }}.catalyst.zoho.com/server/chartdb_backend" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Type" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend:** AppSail (Java 17 Container)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend:** Web Client (Static Hosting)" >> $GITHUB_STEP_SUMMARY

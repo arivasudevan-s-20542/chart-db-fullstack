@@ -22,3 +22,9 @@ export {
     type UpdateDiagramRequest,
     type DiagramListResponse,
 } from './diagrams.api';
+export {
+    aiConfigApi,
+    type AIProvider,
+    type AIConfig,
+    type AIConfigResponse,
+} from './ai-config.api';

@@ -69,14 +69,23 @@ check_prerequisites() {
 
 # Build backend
 build_backend() {
-    print_step "Building backend..."
+    print_step "Building backend with Java 17..."
     
     cd "$PROJECT_ROOT/backend"
-    mvn clean package -DskipTests -Pcatalyst
     
-    # Copy JAR to Catalyst function directory
-    mkdir -p "$PROJECT_ROOT/catalyst/functions/chartdb_backend/lib"
-    cp target/*.jar "$PROJECT_ROOT/catalyst/functions/chartdb_backend/lib/"
+    # Use Java 17 if available (for compatibility with Catalyst)
+    if [ -d "/opt/homebrew/opt/openjdk@17" ]; then
+        export JAVA_HOME="/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
+        export PATH="$JAVA_HOME/bin:$PATH"
+        echo "Using Java 17: $JAVA_HOME"
+    elif [ -d "/usr/lib/jvm/java-17-openjdk" ]; then
+        export JAVA_HOME="/usr/lib/jvm/java-17-openjdk"
+        export PATH="$JAVA_HOME/bin:$PATH"
+        echo "Using Java 17: $JAVA_HOME"
+    fi
+    
+    java -version
+    mvn clean package -DskipTests
     
     echo "✓ Backend built successfully"
 }
@@ -99,7 +108,8 @@ build_frontend() {
     
     # Copy to Catalyst client directory
     mkdir -p "$PROJECT_ROOT/catalyst/client"
-    rm -rf "$PROJECT_ROOT/catalyst/client/*"
+    # Remove old files but keep client-package.json
+    find "$PROJECT_ROOT/catalyst/client" -mindepth 1 ! -name 'client-package.json' -delete
     cp -r dist/* "$PROJECT_ROOT/catalyst/client/"
     
     echo "✓ Frontend built successfully"
@@ -117,7 +127,24 @@ deploy_to_catalyst() {
         catalyst auth:login
     fi
     
-    # Deploy
+    # Check if project is initialized (look for .catalyst file)
+    if [ ! -f ".catalyst" ]; then
+        print_warning "Catalyst project not initialized. Initializing..."
+        echo ""
+        echo "You will need to select your Catalyst project from the list."
+        echo "If you haven't created one yet, create it at https://console.catalyst.zoho.com/"
+        echo ""
+        catalyst init
+    fi
+    
+    # Deploy (AppSail must be created in console first)
+    echo ""
+    echo "NOTE: If AppSail deployment fails, create it in Catalyst Console first:"
+    echo "  1. Go to https://console.catalyst.zoho.com/"
+    echo "  2. Select your project → Develop → AppSail"
+    echo "  3. Create AppSail: name=chartdb-backend, stack=Java 17, port=8080"
+    echo ""
+    
     catalyst deploy
     
     echo "✓ Deployed successfully"
