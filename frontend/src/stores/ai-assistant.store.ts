@@ -88,13 +88,23 @@ export const useAIAssistantStore = create<AIAssistantState>()(
             updateConfig: async (configUpdate: Partial<UserAIConfig>) => {
                 try {
                     const currentConfig = get().userConfig || {
+                        id: '',
+                        userId: '',
                         defaultProvider: 'mistral',
                         defaultModel: 'mistral-small-latest',
+                        maxTokens: 2000,
                         temperature: 0.7,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
                     };
 
-                    const updatedConfig = { ...currentConfig, ...configUpdate };
-                    await aiApi.updateConfig(updatedConfig);
+                    const updatedConfig: UserAIConfig = {
+                        ...currentConfig,
+                        ...configUpdate,
+                        updatedAt: new Date().toISOString(),
+                    };
+                    // TODO: Add backend API endpoint for updating config
+                    // await aiApi.updateConfig(updatedConfig);
                     set({ userConfig: updatedConfig });
                 } catch (error) {
                     console.error('Failed to update AI config:', error);

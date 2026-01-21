@@ -23,12 +23,22 @@ export interface AIChatSession {
     updatedAt: string;
 }
 
+export interface AIMessageMetadata {
+    functionName?: string;
+    arguments?: Record<string, unknown>;
+    result?: {
+        executeOnFrontend?: boolean;
+        [key: string]: unknown;
+    };
+}
+
 export interface AIMessage {
     id: string;
     sessionId: string;
-    role: MessageRole;
+    role: MessageRole | 'user' | 'assistant' | 'system';
     content: string;
     suggestedChanges?: AISuggestedChange[];
+    metadata?: AIMessageMetadata;
     createdAt: string;
 }
 

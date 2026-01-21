@@ -3,9 +3,13 @@
  * This provides instant feedback without waiting for backend round-trips
  */
 
-import type { DBTable, DBField, DBRelationship } from '@/lib/domain/db-table';
+import type { DBTable } from '@/lib/domain/db-table';
+import type { DBField } from '@/lib/domain/db-field';
+import type {
+    DBRelationship,
+    RelationshipType,
+} from '@/lib/domain/db-relationship';
 import { generateId } from '@/lib/utils';
-import type { RelationshipType } from '@/lib/domain/db-relationship';
 
 export interface AIFunctionCall {
     name: string;
@@ -17,6 +21,7 @@ export interface ActionResult {
     action: string;
     summary: string; // Human-readable summary
     elementId?: string; // ID of created/modified element for focusing
+    targetId?: string; // Alias for elementId (backward compatibility)
     elementType?: 'table' | 'column' | 'relationship';
     error?: string;
 }
@@ -24,45 +29,45 @@ export interface ActionResult {
 export interface DiagramContext {
     addTable: (
         table: DBTable,
-        options?: { updateHistory?: boolean }
+        options?: { updateHistory: boolean }
     ) => Promise<void>;
     updateTable: (
         tableId: string,
         updates: Partial<DBTable>,
-        options?: { updateHistory?: boolean }
+        options?: { updateHistory: boolean }
     ) => Promise<void>;
     removeTable: (
         tableId: string,
-        options?: { updateHistory?: boolean }
+        options?: { updateHistory: boolean }
     ) => Promise<void>;
     addField: (
         tableId: string,
         field: DBField,
-        options?: { updateHistory?: boolean }
+        options?: { updateHistory: boolean }
     ) => Promise<void>;
     updateField: (
         tableId: string,
         fieldId: string,
         updates: Partial<DBField>,
-        options?: { updateHistory?: boolean }
+        options?: { updateHistory: boolean }
     ) => Promise<void>;
     removeField: (
         tableId: string,
         fieldId: string,
-        options?: { updateHistory?: boolean }
+        options?: { updateHistory: boolean }
     ) => Promise<void>;
     addRelationship: (
         relationship: DBRelationship,
-        options?: { updateHistory?: boolean }
+        options?: { updateHistory: boolean }
     ) => Promise<void>;
     updateRelationship: (
         relationshipId: string,
         updates: Partial<DBRelationship>,
-        options?: { updateHistory?: boolean }
+        options?: { updateHistory: boolean }
     ) => Promise<void>;
     removeRelationship: (
         relationshipId: string,
-        options?: { updateHistory?: boolean }
+        options?: { updateHistory: boolean }
     ) => Promise<void>;
     tables: DBTable[];
 }
@@ -147,7 +152,7 @@ async function createTable(
         name: tableName,
         fields,
         indexes: [],
-        color: undefined,
+        color: '#7c3aed', // Default purple color
         isView: false,
         x: 100, // Default position - will be adjusted by auto-layout
         y: 100,
@@ -370,14 +375,36 @@ async function createRelationship(
 
     // Create relationship
     const relationshipId = generateId();
+
+    // Convert relationship type to cardinalities
+    const getCardinalities = (
+        relType: RelationshipType
+    ): { source: 'one' | 'many'; target: 'one' | 'many' } => {
+        switch (relType) {
+            case 'one_to_one':
+                return { source: 'one', target: 'one' };
+            case 'one_to_many':
+                return { source: 'one', target: 'many' };
+            case 'many_to_one':
+                return { source: 'many', target: 'one' };
+            case 'many_to_many':
+                return { source: 'many', target: 'many' };
+            default:
+                return { source: 'one', target: 'many' };
+        }
+    };
+
+    const cardinalities = getCardinalities(relationshipType);
+
     const relationship: DBRelationship = {
         id: relationshipId,
         name: `${sourceTable}_${targetTable}`,
         sourceTableId: source.id,
         targetTableId: target.id,
-        type: relationshipType,
-        sourceFieldId: source.fields[0]?.id, // TODO: Smarter field selection
-        targetFieldId: target.fields[0]?.id,
+        sourceCardinality: cardinalities.source,
+        targetCardinality: cardinalities.target,
+        sourceFieldId: source.fields[0]?.id || '', // TODO: Smarter field selection
+        targetFieldId: target.fields[0]?.id || '',
         createdAt: Date.now(),
     };
 
