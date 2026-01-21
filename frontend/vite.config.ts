@@ -6,7 +6,13 @@ import UnpluginInjectPreload from 'unplugin-inject-preload/vite';
 import { execSync } from 'child_process';
 
 // Get git commit hash for versioning
+// Prefer environment variable (set by CI/CD) over git command
 const getGitCommit = () => {
+    // First check if VITE_BUILD_COMMIT is set (from CI/CD)
+    if (process.env.VITE_BUILD_COMMIT) {
+        return process.env.VITE_BUILD_COMMIT;
+    }
+    // Fallback to git command for local development
     try {
         return execSync('git rev-parse HEAD').toString().trim();
     } catch {
@@ -18,11 +24,11 @@ const getGitCommit = () => {
 export default defineConfig({
     define: {
         'import.meta.env.VITE_BUILD_VERSION': JSON.stringify(
-            process.env.npm_package_version || '1.0.0'
+            process.env.VITE_BUILD_VERSION || process.env.npm_package_version || '1.0.0'
         ),
         'import.meta.env.VITE_BUILD_COMMIT': JSON.stringify(getGitCommit()),
         'import.meta.env.VITE_BUILD_TIME': JSON.stringify(
-            new Date().toISOString()
+            process.env.VITE_BUILD_TIME || new Date().toISOString()
         ),
     },
     plugins: [
