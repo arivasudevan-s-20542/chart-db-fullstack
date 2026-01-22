@@ -7,7 +7,9 @@ export type SidebarSection =
     | 'refs'
     | 'customTypes'
     | 'visuals'
-    | 'dataDictionary';
+    | 'dataDictionary'
+    | 'ai'
+    | 'connections';
 
 export type VisualsTab = 'areas' | 'notes';
 

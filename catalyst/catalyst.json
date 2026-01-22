@@ -1,0 +1,28 @@
+{
+  "project_name": "chartdb-fullstack",
+  "project_domain": "chartdb",
+  "env_name": "Development",
+  "appsail": [
+    {
+      "name": "chartdb-backend",
+      "stack": "java17",
+      "source": "../backend",
+      "port": 8080,
+      "build": {
+        "command": "mvn clean package -DskipTests -Pcatalyst"
+      },
+      "start": {
+        "command": "java -jar target/chartdb-backend-1.0.0-SNAPSHOT.jar --spring.profiles.active=catalyst"
+      },
+      "env_variables": {
+        "SPRING_PROFILES_ACTIVE": "catalyst"
+      }
+    }
+  ],
+  "client": {
+    "client_name": "chartdb_web",
+    "client_type": "web",
+    "source": "./client",
+    "default_host": true
+  }
+}

@@ -24,6 +24,7 @@ public class TableCreateMessage {
     private List<ColumnData> columns;
     private String userId;
     private String userName;
+    private String sessionId;
     private Long timestamp;
     
     @Data

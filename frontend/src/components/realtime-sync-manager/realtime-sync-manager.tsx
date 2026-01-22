@@ -37,6 +37,7 @@ export const RealtimeSyncManager: React.FC = () => {
         addNote,
         updateNote,
         removeNote,
+        loadDiagram,
     } = useChartDB();
 
     // Track if we're applying remote changes to avoid echo
@@ -250,9 +251,14 @@ export const RealtimeSyncManager: React.FC = () => {
                 event
             );
 
-            // Ignore own events
-            if (event.userId === user?.id) {
-                console.log('[RealtimeSync] Ignoring own event');
+            // Ignore events from same tab/session to avoid echo
+            // If sessionId is null, it came from REST API (e.g., import) - apply to all tabs
+            // If sessionId matches ours, ignore (it's from this same tab via WebSocket)
+            if (
+                event.sessionId &&
+                event.sessionId === wsService.getSessionId()
+            ) {
+                console.log('[RealtimeSync] Ignoring own session event');
                 return;
             }
 
@@ -467,6 +473,17 @@ export const RealtimeSyncManager: React.FC = () => {
                         );
                         break;
 
+                    case 'AI_ACTION':
+                        // AI made changes - reload the entire diagram to see the changes
+                        console.log(
+                            '[RealtimeSync] AI action detected, reloading diagram:',
+                            event.payload
+                        );
+                        if (currentDiagramId) {
+                            await loadDiagram(currentDiagramId);
+                        }
+                        break;
+
                     default:
                         // Cursor, selection, lock events are handled elsewhere
                         break;
@@ -507,6 +524,7 @@ export const RealtimeSyncManager: React.FC = () => {
         addNote,
         updateNote,
         removeNote,
+        loadDiagram,
     ]);
 
     // This component doesn't render anything

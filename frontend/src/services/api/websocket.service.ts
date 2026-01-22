@@ -29,13 +29,16 @@ export type DiagramEventType =
     | 'CURSOR_MOVED'
     | 'SELECTION_CHANGED'
     | 'ELEMENT_LOCKED'
-    | 'ELEMENT_UNLOCKED';
+    | 'ELEMENT_UNLOCKED'
+    | 'AI_ACTION';
 
 export interface DiagramEvent {
     type: DiagramEventType;
     diagramId: string;
     userId: string;
     userEmail?: string;
+    sessionId?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload: any;
     timestamp: string;
 }
@@ -67,6 +70,7 @@ class WebSocketService {
     private presenceListeners: Set<PresenceCallback> = new Set();
     private latencyListeners: Set<LatencyCallback> = new Set();
     private currentDiagramId: string | null = null;
+    private sessionId: string | null = null;
     private latencyInterval: ReturnType<typeof setInterval> | null = null;
     private currentLatency: number = -1;
     private pendingPings: Map<string, number> = new Map();
@@ -105,9 +109,14 @@ class WebSocketService {
                 heartbeatOutgoing: 10000,
             });
 
-            this.client.onConnect = () => {
+            this.client.onConnect = (frame) => {
                 console.log('[WebSocket] Connected successfully');
                 this.reconnectAttempts = 0;
+
+                // Store session ID from STOMP connection
+                this.sessionId =
+                    frame.headers['session'] ||
+                    `session-${Date.now()}-${Math.random()}`;
 
                 // Subscribe to pong responses for latency measurement
                 this.subscribeToPong();
@@ -173,6 +182,8 @@ class WebSocketService {
         this.eventListeners.clear();
         this.presenceListeners.clear();
         this.latencyListeners.clear();
+
+        this.sessionId = null;
 
         if (this.client) {
             this.client.deactivate();
@@ -551,6 +562,13 @@ class WebSocketService {
      */
     getCurrentDiagramId(): string | null {
         return this.currentDiagramId;
+    }
+
+    /**
+     * Get current WebSocket session ID
+     */
+    getSessionId(): string | null {
+        return this.sessionId;
     }
 }
 

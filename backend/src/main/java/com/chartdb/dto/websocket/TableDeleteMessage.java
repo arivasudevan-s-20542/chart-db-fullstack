@@ -14,5 +14,6 @@ public class TableDeleteMessage {
     private String tableId;
     private String userId;
     private String userName;
+    private String sessionId;
     private Long timestamp;
 }

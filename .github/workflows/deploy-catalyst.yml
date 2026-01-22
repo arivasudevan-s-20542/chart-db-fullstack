@@ -1,0 +1,115 @@
+name: Deploy to Zoho Catalyst
+
+on:
+  push:
+    branches: [feature/zoho-catalyst-deployment]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Catalyst Environment'
+        required: true
+        default: 'Development'
+        type: choice
+        options:
+          - Development
+          - Production
+
+env:
+  CATALYST_PROJECT_ID: ${{ vars.CATALYST_PROJECT_ID }}
+  CATALYST_ORG_ID: ${{ vars.CATALYST_ORG_ID }}
+  NODE_VERSION: '20'
+  JAVA_VERSION: '17'
+
+jobs:
+  deploy-to-catalyst:
+    name: Build & Deploy to Catalyst
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'Development' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17 (Catalyst compatible)
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build Backend with Maven (Catalyst profile)
+        working-directory: ./backend
+        run: mvn clean package -DskipTests -Pcatalyst
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Build Frontend for Catalyst
+        working-directory: ./frontend
+        run: npm run build
+        env:
+          VITE_API_URL: /api
+          VITE_WS_URL: /ws
+          VITE_BUILD_VERSION: ${{ github.run_number }}
+          VITE_BUILD_COMMIT: ${{ github.sha }}
+
+      - name: Prepare Catalyst Client Directory
+        run: |
+          mkdir -p catalyst/client
+          cp -r frontend/dist/* catalyst/client/
+          ls -la backend/target/*.jar
+
+      - name: Install Catalyst CLI
+        run: npm install -g zcatalyst-cli
+
+      - name: Authenticate with Catalyst
+        run: |
+          mkdir -p ~/.catalyst
+          echo '{
+            "client_id": "${{ secrets.CATALYST_CLIENT_ID }}",
+            "client_secret": "${{ secrets.CATALYST_CLIENT_SECRET }}",
+            "refresh_token": "${{ secrets.CATALYST_REFRESH_TOKEN }}",
+            "access_token": "",
+            "token_type": "Bearer"
+          }' > ~/.catalyst/credentials.json
+        env:
+          CATALYST_ORG_ID: ${{ vars.CATALYST_ORG_ID }}
+
+      - name: Initialize Catalyst Project
+        working-directory: ./catalyst
+        run: catalyst init --project ${{ vars.CATALYST_PROJECT_ID }} --org ${{ vars.CATALYST_ORG_ID }} || true
+
+      - name: Deploy to Catalyst AppSail
+        working-directory: ./catalyst
+        run: |
+          echo "Deploying to Catalyst..."
+          echo "Project ID: ${{ vars.CATALYST_PROJECT_ID }}"
+          catalyst deploy --project ${{ vars.CATALYST_PROJECT_ID }}
+        env:
+          CATALYST_ORG_ID: ${{ vars.CATALYST_ORG_ID }}
+
+      - name: Configure Catalyst Environment Variables
+        working-directory: ./catalyst
+        continue-on-error: true
+        run: |
+          catalyst env:set JWT_SECRET="${{ secrets.JWT_SECRET }}" SPRING_PROFILES_ACTIVE="catalyst" --project ${{ vars.CATALYST_PROJECT_ID }} --appsail chartdb-backend || true
+
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 Catalyst Deployment Complete!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Project ID:** ${{ vars.CATALYST_PROJECT_ID }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** ${{ github.event.inputs.environment || 'Development' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Java Version:** ${{ env.JAVA_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Type" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend:** AppSail (Java 17 Container)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend:** Web Client (Static Hosting)" >> $GITHUB_STEP_SUMMARY

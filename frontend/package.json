@@ -1,7 +1,7 @@
 {
     "name": "chartdb",
     "private": true,
-    "version": "1.19.0",
+    "version": "1.20.2",
     "type": "module",
     "scripts": {
         "dev": "vite",
@@ -52,6 +52,7 @@
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "cmdk": "^1.0.0",
+        "date-fns": "^4.1.0",
         "dexie": "^4.0.8",
         "fast-deep-equal": "^3.1.3",
         "html-to-image": "^1.11.11",

@@ -96,8 +96,13 @@ logging:
     org.springframework.web: INFO
     org.springframework.websocket: DEBUG
 
-# Actuator Configuration
-management:
+# Mistral Configuration
+mistral:
+  base-url: https://mistral-ai.chartdb.in
+  api-key: 82be75bab472c188118d3857ca2c07fc11365c4d2c23284f9fbf75e2cd79f717
+  deepseek:
+    base-url: https://api.deepseek.com
+    api-key: sk-11de7a34fb1a4b32910bdbca66a426dd
   endpoints:
     web:
       exposure:

@@ -1,18 +1,24 @@
 package com.chartdb.model;
 
+import com.chartdb.model.enums.TableStatus;
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.Type;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Entity
 @Table(name = "tables", indexes = {
     @Index(name = "idx_tables_diagram", columnList = "diagram_id"),
     @Index(name = "idx_tables_position", columnList = "diagram_id, position_x, position_y"),
-    @Index(name = "idx_tables_name", columnList = "diagram_id, name")
+    @Index(name = "idx_tables_name", columnList = "diagram_id, name"),
+    @Index(name = "idx_diagram_tables_status", columnList = "status")
 }, uniqueConstraints = {
     @UniqueConstraint(name = "unique_table_name_per_diagram", columnNames = {"diagram_id", "name"})
 })
@@ -122,12 +128,25 @@ public class DiagramTable extends BaseEntity {
     
     // View flags
     @Column(name = "is_view")
-    @Builder.Default
-    private Boolean isView = false;
+    private Boolean isView;
     
     @Column(name = "is_materialized_view")
-    @Builder.Default
-    private Boolean isMaterializedView = false;
+    private Boolean isMaterializedView;
+    
+    // Table Status (for live database sync)
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private TableStatus status;
+    
+    @Column(name = "source_database", length = 100)
+    private String sourceDatabase;
+    
+    @Column(name = "last_verified_at")
+    private Instant lastVerifiedAt;
+    
+    @Type(JsonBinaryType.class)
+    @Column(name = "sync_metadata", columnDefinition = "jsonb")
+    private Map<String, Object> syncMetadata;
     
     // Relationships
     @OneToMany(mappedBy = "table", cascade = CascadeType.ALL, orphanRemoval = true)

@@ -1,0 +1,122 @@
+# Zoho Catalyst Spring Boot Application Configuration
+# This profile is used when deploying to Zoho Catalyst
+
+spring:
+  application:
+    name: chartdb-backend-catalyst
+  
+  # PostgreSQL Database (Catalyst Cloud SQL or external)
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/chartdb}
+    username: ${DATABASE_USERNAME:chartdb}
+    password: ${DATABASE_PASSWORD:chartdb}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: UTC
+    open-in-view: false
+  
+  # Enable Flyway for database migrations
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  
+  # Jackson Configuration
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+    time-zone: UTC
+  
+  # Catalyst uses environment variables for OAuth2
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:}
+            client-secret: ${GOOGLE_CLIENT_SECRET:}
+          github:
+            client-id: ${GITHUB_CLIENT_ID:}
+            client-secret: ${GITHUB_CLIENT_SECRET:}
+          zoho:
+            client-id: ${ZOHO_CLIENT_ID:}
+            client-secret: ${ZOHO_CLIENT_SECRET:}
+
+# Catalyst-specific database configuration
+# Catalyst Data Store connection is injected automatically
+catalyst:
+  enabled: true
+  project-id: ${CATALYST_PROJECT_ID:}
+  environment: ${CATALYST_ENVIRONMENT:Development}
+
+# Server Configuration (Catalyst manages the port)
+server:
+  port: ${PORT:8080}
+  forward-headers-strategy: framework
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:catalyst-jwt-secret-key-change-in-production-32-characters}
+  access-token-expiration: 86400000     # 24 hours
+  refresh-token-expiration: 604800000  # 7 days
+
+# CORS Configuration for Catalyst
+cors:
+  allowed-origins:
+    - ${CATALYST_CLIENT_URL:https://*.catalyst.zoho.com}
+    - ${CUSTOM_DOMAIN:}
+  allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+  allowed-headers: "*"
+  allow-credentials: true
+  max-age: 3600
+
+# WebSocket Configuration
+websocket:
+  allowed-origins:
+    - ${CATALYST_CLIENT_URL:https://*.catalyst.zoho.com}
+    - ${CUSTOM_DOMAIN:}
+  endpoint: /ws
+  application-prefix: /app
+  broker-prefix: /topic
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.chartdb: INFO
+    org.springframework.web: INFO
+    com.zc.component: DEBUG
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized
+
+# App Configuration
+app:
+  oauth2:
+    redirect-uri: ${OAUTH2_REDIRECT_URI:}

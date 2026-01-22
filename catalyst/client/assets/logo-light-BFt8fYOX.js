@@ -1,0 +1,1 @@
+const o=["#ff6363","#ff6b8a","#c05dcf","#b067e9","#8a61f5","#7175fa","#8eb7ff","#42e0c0","#4dee8a","#9ef07a","#ffe374","#ff9f74"],a=()=>o[Math.floor(Math.random()*o.length)],s="#b0b0b0",e="#7d7d7d",t="#8eb7ff",f="#b067e9",r="/assets/logo-dark-BhPWCNAk.png",l="/assets/logo-light-Bks3id4h.png";export{l as C,r as a,f as b,o as c,t as d,e as m,a as r,s as v};

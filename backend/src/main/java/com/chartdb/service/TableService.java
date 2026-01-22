@@ -16,14 +16,19 @@ import com.chartdb.model.TableColumn;
 import com.chartdb.repository.ColumnRepository;
 import com.chartdb.repository.RelationshipRepository;
 import com.chartdb.repository.TableRepository;
+import com.chartdb.dto.websocket.TableCreateMessage;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -36,6 +41,8 @@ public class TableService {
     private final DiagramService diagramService;
     private final TableMapper tableMapper;
     private final ColumnMapper columnMapper;
+    private final EntityManager entityManager;
+    private final SimpMessagingTemplate messagingTemplate;
     
     @Transactional
     public TableResponse createTable(String diagramId, String userId, CreateTableRequest request) {
@@ -75,13 +82,34 @@ public class TableService {
                 columnRepository.save(column);
                 log.debug("Column created: {} in table {}", column.getId(), table.getId());
             }
+            // Flush to ensure columns are persisted before reload
+            entityManager.flush();
+            entityManager.clear();
         }
         
         log.info("Table created: {} in diagram {} by user {}", table.getId(), diagramId, userId);
         
         // Reload table with columns
         table = tableRepository.findByIdWithColumns(table.getId()).orElse(table);
-        return tableMapper.toResponse(table);
+        TableResponse response = tableMapper.toResponse(table);
+        
+        // Broadcast table creation to all connected clients (for cross-tab sync)
+        // Send to /topic/diagram/{id}/events which is what frontend subscribes to
+        Map<String, Object> eventPayload = new HashMap<>();
+        eventPayload.put("table", response);
+        
+        Map<String, Object> event = new HashMap<>();
+        event.put("type", "TABLE_CREATED");
+        event.put("diagramId", diagramId);
+        event.put("userId", userId);
+        event.put("sessionId", null); // null = from REST API, not WebSocket
+        event.put("payload", eventPayload);
+        event.put("timestamp", Instant.now().toString());
+        
+        messagingTemplate.convertAndSend("/topic/diagram/" + diagramId + "/events", event);
+        log.debug("Broadcasted TABLE_CREATED event for table {} to diagram {}", table.getId(), diagramId);
+        
+        return response;
     }
     
     @Transactional(readOnly = true)
