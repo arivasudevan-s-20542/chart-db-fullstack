@@ -38,6 +38,7 @@ export interface DiagramEvent {
     userId: string;
     userEmail?: string;
     sessionId?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload: any;
     timestamp: string;
 }
@@ -111,9 +112,11 @@ class WebSocketService {
             this.client.onConnect = (frame) => {
                 console.log('[WebSocket] Connected successfully');
                 this.reconnectAttempts = 0;
-                
+
                 // Store session ID from STOMP connection
-                this.sessionId = frame.headers['session'] || `session-${Date.now()}-${Math.random()}`;
+                this.sessionId =
+                    frame.headers['session'] ||
+                    `session-${Date.now()}-${Math.random()}`;
 
                 // Subscribe to pong responses for latency measurement
                 this.subscribeToPong();
@@ -179,7 +182,7 @@ class WebSocketService {
         this.eventListeners.clear();
         this.presenceListeners.clear();
         this.latencyListeners.clear();
-        
+
         this.sessionId = null;
 
         if (this.client) {
