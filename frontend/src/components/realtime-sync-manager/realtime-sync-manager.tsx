@@ -252,7 +252,8 @@ export const RealtimeSyncManager: React.FC = () => {
             );
 
             // Ignore events from same tab/session to avoid echo
-            // (but allow events from same user in different tabs)
+            // If sessionId is null, it came from REST API (e.g., import) - apply to all tabs
+            // If sessionId matches ours, ignore (it's from this same tab via WebSocket)
             if (
                 event.sessionId &&
                 event.sessionId === wsService.getSessionId()

@@ -16,9 +16,11 @@ import com.chartdb.model.TableColumn;
 import com.chartdb.repository.ColumnRepository;
 import com.chartdb.repository.RelationshipRepository;
 import com.chartdb.repository.TableRepository;
+import com.chartdb.dto.websocket.TableCreateMessage;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +40,7 @@ public class TableService {
     private final TableMapper tableMapper;
     private final ColumnMapper columnMapper;
     private final EntityManager entityManager;
+    private final SimpMessagingTemplate messagingTemplate;
     
     @Transactional
     public TableResponse createTable(String diagramId, String userId, CreateTableRequest request) {
@@ -86,7 +89,27 @@ public class TableService {
         
         // Reload table with columns
         table = tableRepository.findByIdWithColumns(table.getId()).orElse(table);
-        return tableMapper.toResponse(table);
+        TableResponse response = tableMapper.toResponse(table);
+        
+        // Broadcast table creation to all connected clients (for cross-tab sync)
+        TableCreateMessage wsMessage = TableCreateMessage.builder()
+            .diagramId(diagramId)
+            .tableId(table.getId())
+            .name(table.getName())
+            .positionX(table.getPositionX())
+            .positionY(table.getPositionY())
+            .width(table.getWidth())
+            .color(table.getColor())
+            .userId(userId)
+            .userName(null) // Will be populated by frontend from user context
+            .sessionId(null) // null sessionId means from REST API, all tabs should update
+            .timestamp(System.currentTimeMillis())
+            .build();
+        
+        messagingTemplate.convertAndSend("/topic/diagram/" + diagramId + "/table-created", wsMessage);
+        log.debug("Broadcasted table-created message for table {} to diagram {}", table.getId(), diagramId);
+        
+        return response;
     }
     
     @Transactional(readOnly = true)
