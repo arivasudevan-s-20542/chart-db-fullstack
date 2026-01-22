@@ -26,7 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -92,22 +94,20 @@ public class TableService {
         TableResponse response = tableMapper.toResponse(table);
         
         // Broadcast table creation to all connected clients (for cross-tab sync)
-        TableCreateMessage wsMessage = TableCreateMessage.builder()
-            .diagramId(diagramId)
-            .tableId(table.getId())
-            .name(table.getName())
-            .positionX(table.getPositionX())
-            .positionY(table.getPositionY())
-            .width(table.getWidth())
-            .color(table.getColor())
-            .userId(userId)
-            .userName(null) // Will be populated by frontend from user context
-            .sessionId(null) // null sessionId means from REST API, all tabs should update
-            .timestamp(System.currentTimeMillis())
-            .build();
+        // Send to /topic/diagram/{id}/events which is what frontend subscribes to
+        Map<String, Object> eventPayload = new HashMap<>();
+        eventPayload.put("table", response);
         
-        messagingTemplate.convertAndSend("/topic/diagram/" + diagramId + "/table-created", wsMessage);
-        log.debug("Broadcasted table-created message for table {} to diagram {}", table.getId(), diagramId);
+        Map<String, Object> event = new HashMap<>();
+        event.put("type", "TABLE_CREATED");
+        event.put("diagramId", diagramId);
+        event.put("userId", userId);
+        event.put("sessionId", null); // null = from REST API, not WebSocket
+        event.put("payload", eventPayload);
+        event.put("timestamp", Instant.now().toString());
+        
+        messagingTemplate.convertAndSend("/topic/diagram/" + diagramId + "/events", event);
+        log.debug("Broadcasted TABLE_CREATED event for table {} to diagram {}", table.getId(), diagramId);
         
         return response;
     }
