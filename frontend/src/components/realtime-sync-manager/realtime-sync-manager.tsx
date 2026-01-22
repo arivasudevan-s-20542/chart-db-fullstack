@@ -251,9 +251,10 @@ export const RealtimeSyncManager: React.FC = () => {
                 event
             );
 
-            // Ignore own events
-            if (event.userId === user?.id) {
-                console.log('[RealtimeSync] Ignoring own event');
+            // Ignore events from same tab/session to avoid echo
+            // (but allow events from same user in different tabs)
+            if (event.sessionId && event.sessionId === wsService.getSessionId()) {
+                console.log('[RealtimeSync] Ignoring own session event');
                 return;
             }
 

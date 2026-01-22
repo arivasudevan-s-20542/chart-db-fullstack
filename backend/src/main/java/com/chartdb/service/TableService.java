@@ -16,6 +16,7 @@ import com.chartdb.model.TableColumn;
 import com.chartdb.repository.ColumnRepository;
 import com.chartdb.repository.RelationshipRepository;
 import com.chartdb.repository.TableRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,7 @@ public class TableService {
     private final DiagramService diagramService;
     private final TableMapper tableMapper;
     private final ColumnMapper columnMapper;
+    private final EntityManager entityManager;
     
     @Transactional
     public TableResponse createTable(String diagramId, String userId, CreateTableRequest request) {
@@ -75,6 +77,9 @@ public class TableService {
                 columnRepository.save(column);
                 log.debug("Column created: {} in table {}", column.getId(), table.getId());
             }
+            // Flush to ensure columns are persisted before reload
+            entityManager.flush();
+            entityManager.clear();
         }
         
         log.info("Table created: {} in diagram {} by user {}", table.getId(), diagramId, userId);

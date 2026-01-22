@@ -24,5 +24,6 @@ public class ColumnMessage {
     private Integer orderIndex;
     private String userId;
     private String userName;
+    private String sessionId;
     private Long timestamp;
 }

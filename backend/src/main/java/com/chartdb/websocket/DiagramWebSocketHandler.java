@@ -167,6 +167,7 @@ public class DiagramWebSocketHandler {
     public void handleTableCreate(
             @DestinationVariable String diagramId,
             @Payload TableCreateMessage message,
+            SimpMessageHeaderAccessor headerAccessor,
             Principal principal) {
         
         UserPrincipal user = extractUserPrincipal(principal);
@@ -174,6 +175,7 @@ public class DiagramWebSocketHandler {
         
         message.setUserId(user.getId());
         message.setUserName(user.getDisplayName());
+        message.setSessionId(headerAccessor.getSessionId());
         message.setTimestamp(System.currentTimeMillis());
         
         messagingTemplate.convertAndSend("/topic/diagram/" + diagramId + "/table-created", message);
@@ -184,6 +186,7 @@ public class DiagramWebSocketHandler {
     public void handleTableUpdate(
             @DestinationVariable String diagramId,
             @Payload TableUpdateMessage message,
+            SimpMessageHeaderAccessor headerAccessor,
             Principal principal) {
         
         UserPrincipal user = extractUserPrincipal(principal);
@@ -191,6 +194,7 @@ public class DiagramWebSocketHandler {
         
         message.setUserId(user.getId());
         message.setUserName(user.getDisplayName());
+        message.setSessionId(headerAccessor.getSessionId());
         message.setTimestamp(System.currentTimeMillis());
         
         messagingTemplate.convertAndSend("/topic/diagram/" + diagramId + "/table-updated", message);
@@ -200,6 +204,7 @@ public class DiagramWebSocketHandler {
     public void handleTableDelete(
             @DestinationVariable String diagramId,
             @Payload TableDeleteMessage message,
+            SimpMessageHeaderAccessor headerAccessor,
             Principal principal) {
         
         UserPrincipal user = extractUserPrincipal(principal);
@@ -207,6 +212,7 @@ public class DiagramWebSocketHandler {
         
         message.setUserId(user.getId());
         message.setUserName(user.getDisplayName());
+        message.setSessionId(headerAccessor.getSessionId());
         message.setTimestamp(System.currentTimeMillis());
         
         // Release any locks on this table
@@ -224,6 +230,7 @@ public class DiagramWebSocketHandler {
     public void handleColumnChange(
             @DestinationVariable String diagramId,
             @Payload ColumnMessage message,
+            SimpMessageHeaderAccessor headerAccessor,
             Principal principal) {
         
         UserPrincipal user = extractUserPrincipal(principal);
@@ -231,6 +238,7 @@ public class DiagramWebSocketHandler {
         
         message.setUserId(user.getId());
         message.setUserName(user.getDisplayName());
+        message.setSessionId(headerAccessor.getSessionId());
         message.setTimestamp(System.currentTimeMillis());
         
         String destination = String.format("/topic/diagram/%s/column-%s", diagramId, message.getAction());

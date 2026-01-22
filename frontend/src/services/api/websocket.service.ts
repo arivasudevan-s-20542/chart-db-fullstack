@@ -37,6 +37,7 @@ export interface DiagramEvent {
     diagramId: string;
     userId: string;
     userEmail?: string;
+    sessionId?: string;
     payload: any;
     timestamp: string;
 }
@@ -552,6 +553,13 @@ class WebSocketService {
      */
     getCurrentDiagramId(): string | null {
         return this.currentDiagramId;
+    }
+
+    /**
+     * Get current WebSocket session ID
+     */
+    getSessionId(): string | null {
+        return this.client?.connected ? this.client.connectionId : null;
     }
 }
 

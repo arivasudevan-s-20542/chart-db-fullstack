@@ -23,6 +23,5 @@ public class TableUpdateMessage {
     private String color;
     private Map<String, Object> metadata;
     private String userId;
-    private String userName;
-    private Long timestamp;
+    private String userName;    private String sessionId;    private Long timestamp;
 }
