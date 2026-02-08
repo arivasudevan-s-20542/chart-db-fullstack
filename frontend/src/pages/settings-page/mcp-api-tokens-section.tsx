@@ -10,10 +10,7 @@ import {
     CardTitle,
 } from '@/components/card/card';
 import { Alert, AlertDescription } from '@/components/alert/alert';
-import {
-    mcpTokenApi,
-    type McpApiToken,
-} from '@/services/api';
+import { mcpTokenApi, type McpApiToken } from '@/services/api';
 import {
     Loader2,
     Plus,
@@ -79,15 +76,12 @@ export const McpApiTokensSection: React.FC = () => {
             setNewTokenName('');
             setNewTokenExpiry('');
             setShowCreateForm(false);
-            setSuccess(
-                'Token created! Copy it now — it won\'t be shown again.'
-            );
+            setSuccess("Token created! Copy it now — it won't be shown again.");
             await loadTokens();
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Failed to create token:', err);
-            setError(
-                err.response?.data?.message || 'Failed to create API token'
-            );
+            const e = err as { response?: { data?: { message?: string } } };
+            setError(e.response?.data?.message || 'Failed to create API token');
         } finally {
             setCreating(false);
         }
@@ -106,11 +100,10 @@ export const McpApiTokensSection: React.FC = () => {
             await mcpTokenApi.revokeToken(tokenId);
             setSuccess(`Token "${tokenName}" revoked successfully`);
             await loadTokens();
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Failed to revoke token:', err);
-            setError(
-                err.response?.data?.message || 'Failed to revoke token'
-            );
+            const e = err as { response?: { data?: { message?: string } } };
+            setError(e.response?.data?.message || 'Failed to revoke token');
         }
     };
 
@@ -200,7 +193,7 @@ export const McpApiTokensSection: React.FC = () => {
                                     won&apos;t be shown again):
                                 </p>
                                 <div className="flex items-center gap-2">
-                                    <code className="flex-1 rounded bg-amber-100 px-3 py-2 text-xs font-mono break-all">
+                                    <code className="flex-1 break-all rounded bg-amber-100 px-3 py-2 font-mono text-xs">
                                         {newlyCreatedToken}
                                     </code>
                                     <Button
@@ -217,13 +210,12 @@ export const McpApiTokensSection: React.FC = () => {
                                         )}
                                     </Button>
                                 </div>
-                                <p className="text-xs mt-2">
-                                    <strong>Usage with MCP clients:</strong>{' '}
-                                    Set{' '}
+                                <p className="mt-2 text-xs">
+                                    <strong>Usage with MCP clients:</strong> Set
                                     <code className="rounded bg-amber-100 px-1">
                                         Authorization: Bearer{' '}
                                         {newlyCreatedToken.substring(0, 12)}...
-                                    </code>{' '}
+                                    </code>
                                     in your MCP client configuration.
                                 </p>
                             </div>
@@ -233,7 +225,7 @@ export const McpApiTokensSection: React.FC = () => {
 
                 {/* Create form */}
                 {showCreateForm && (
-                    <div className="rounded-lg border p-4 space-y-3">
+                    <div className="space-y-3 rounded-lg border p-4">
                         <h4 className="font-medium">Create New API Token</h4>
                         <div className="space-y-2">
                             <Label htmlFor="token-name">Token Name</Label>
@@ -304,8 +296,8 @@ export const McpApiTokensSection: React.FC = () => {
                         <Loader2 className="size-6 animate-spin text-muted-foreground" />
                     </div>
                 ) : tokens.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                        <Key className="size-10 mx-auto mb-3 opacity-50" />
+                    <div className="py-8 text-center text-muted-foreground">
+                        <Key className="mx-auto mb-3 size-10 opacity-50" />
                         <p>No API tokens yet.</p>
                         <p className="text-sm">
                             Create a token to allow MCP clients to access your
@@ -323,7 +315,7 @@ export const McpApiTokensSection: React.FC = () => {
                                         : ''
                                 }`}
                             >
-                                <div className="flex-1 min-w-0">
+                                <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-2">
                                         <span className="font-medium truncate">
                                             {token.name}
@@ -338,7 +330,7 @@ export const McpApiTokensSection: React.FC = () => {
                                             </span>
                                         )}
                                     </div>
-                                    <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                                    <div className="mt-1 flex items-center gap-4 text-xs text-muted-foreground">
                                         <span className="font-mono">
                                             {token.tokenPrefix}•••
                                         </span>
@@ -365,12 +357,9 @@ export const McpApiTokensSection: React.FC = () => {
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="text-destructive hover:text-destructive hover:bg-destructive/10 ml-2"
+                                        className="ml-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
                                         onClick={() =>
-                                            handleRevoke(
-                                                token.id,
-                                                token.name
-                                            )
+                                            handleRevoke(token.id, token.name)
                                         }
                                     >
                                         <Trash2 className="size-4" />
@@ -382,16 +371,16 @@ export const McpApiTokensSection: React.FC = () => {
                 )}
 
                 {/* MCP Configuration Help */}
-                <div className="rounded-lg border border-dashed p-4 mt-4">
-                    <h4 className="font-medium text-sm mb-2">
+                <div className="mt-4 rounded-lg border border-dashed p-4">
+                    <h4 className="mb-2 text-sm font-medium">
                         📖 How to use with MCP clients
                     </h4>
-                    <div className="text-xs text-muted-foreground space-y-2">
+                    <div className="space-y-2 text-xs text-muted-foreground">
                         <p>
-                            <strong>Claude Desktop</strong>{' '}
+                            <strong>Claude Desktop</strong>
                             (claude_desktop_config.json):
                         </p>
-                        <pre className="rounded bg-muted p-2 overflow-x-auto text-[11px]">
+                        <pre className="overflow-x-auto rounded bg-muted p-2 text-[11px]">
 {`{
   "mcpServers": {
     "chartdb": {
@@ -406,7 +395,7 @@ export const McpApiTokensSection: React.FC = () => {
                         <p className="mt-2">
                             <strong>cURL test:</strong>
                         </p>
-                        <pre className="rounded bg-muted p-2 overflow-x-auto text-[11px]">
+                        <pre className="overflow-x-auto rounded bg-muted p-2 text-[11px]">
 {`curl -H "Authorization: Bearer <your-token>" \\
   ${window.location.origin}/api/mcp/.well-known/mcp.json`}
                         </pre>

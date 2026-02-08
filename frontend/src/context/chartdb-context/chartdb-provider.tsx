@@ -628,7 +628,12 @@ export const ChartDBProvider: React.FC<
             }
 
             // Collect all tables with position/size changes for batch update event
-            const tablesWithChanges: Array<{ id: string; x: number; y: number; width?: number }> = [];
+            const tablesWithChanges: Array<{
+                id: string;
+                x: number;
+                y: number;
+                width?: number;
+            }> = [];
             
             for (const updatedTable of updatedTables) {
                 const prevTable = prevTables.find(
@@ -1111,7 +1116,15 @@ export const ChartDBProvider: React.FC<
                 resetRedoStack();
             }
         },
-        [db, diagramId, setTables, addUndoAction, resetRedoStack, getIndex, events]
+        [
+            db,
+            diagramId,
+            setTables,
+            addUndoAction,
+            resetRedoStack,
+            getIndex,
+            events,
+        ]
     );
 
     const createIndex: ChartDBContext['createIndex'] = useCallback(
@@ -1192,7 +1205,15 @@ export const ChartDBProvider: React.FC<
                 resetRedoStack();
             }
         },
-        [db, diagramId, setTables, addUndoAction, resetRedoStack, getIndex, events]
+        [
+            db,
+            diagramId,
+            setTables,
+            addUndoAction,
+            resetRedoStack,
+            getIndex,
+            events,
+        ]
     );
 
     const addRelationships: ChartDBContext['addRelationships'] = useCallback(
