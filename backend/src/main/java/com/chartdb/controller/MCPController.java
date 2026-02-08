@@ -707,6 +707,8 @@ public class MCPController {
                 Map.of("diagramId", MCPParameter.required("string", "Diagram ID"),
                        "sourceTableId", MCPParameter.required("string", "Source table ID"),
                        "targetTableId", MCPParameter.required("string", "Target table ID"),
+                       "sourceColumnId", MCPParameter.required("string", "Source column ID (FK source - typically the PK column)"),
+                       "targetColumnId", MCPParameter.required("string", "Target column ID (FK target - the foreign key column)"),
                        "type", MCPParameter.required("string", "Relationship type (one-to-one, one-to-many, many-to-many)"))),
             MCPTool.of("chartdb_update-relationship", "Update relationship", 
                 Map.of("relationshipId", MCPParameter.required("string", "Relationship ID"),

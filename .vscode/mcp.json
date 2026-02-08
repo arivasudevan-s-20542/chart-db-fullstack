@@ -1,13 +1,13 @@
 {
   "servers": {
     "chartdb": {
-      "command": "node",
+      "command": "/Users/ariva-20542/.nvm/versions/node/v24.12.0/bin/node",
       "args": [
         ".vscode/mcp-proxy.mjs"
       ],
       "env": {
-        "MCP_URL": "https://chartdb.in/api/mcp",
-        "MCP_TOKEN": "mcp_w3TH7s4r7W7B3wjcz-aDAhD7_XTt79bp4Ch4OQj6a8Q"
+        "MCP_URL": "http://localhost:8080/api/mcp",
+        "MCP_TOKEN": "mcp_6SAg1vtUHR0TCuc9k1UhKvZp8aZNqs1k8jq3mojeuo0"
       }
     }
   }
