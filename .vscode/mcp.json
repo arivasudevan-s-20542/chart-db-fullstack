@@ -1,0 +1,14 @@
+{
+  "servers": {
+    "chartdb": {
+      "command": "node",
+      "args": [
+        ".vscode/mcp-proxy.mjs"
+      ],
+      "env": {
+        "MCP_URL": "https://chartdb.in/api/mcp",
+        "MCP_TOKEN": "mcp_w3TH7s4r7W7B3wjcz-aDAhD7_XTt79bp4Ch4OQj6a8Q"
+      }
+    }
+  }
+}

@@ -19,7 +19,18 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
             HttpServletResponse response,
             AuthenticationException authException) throws IOException {
         
-        log.error("Responding with unauthorized error. Message - {}", authException.getMessage());
+        log.error("Responding with unauthorized error. Method={} URI={} QueryString={} Message={}",
+            request.getMethod(), request.getRequestURI(), request.getQueryString(), authException.getMessage());
+        
+        // For MCP-related paths, return 404 instead of 401 to prevent VS Code
+        // from triggering OAuth flows. VS Code interprets any 401 as "needs OAuth".
+        String uri = request.getRequestURI();
+        if (uri != null && (uri.startsWith("/api/mcp") || uri.equals("/authorize") || uri.equals("/token") || uri.equals("/register"))) {
+            response.setContentType("application/json");
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            response.getWriter().write("{\"error\": \"not_found\"}");
+            return;
+        }
         
         response.setContentType("application/json");
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

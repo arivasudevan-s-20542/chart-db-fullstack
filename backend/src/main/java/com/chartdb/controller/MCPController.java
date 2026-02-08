@@ -38,6 +38,21 @@ public class MCPController {
     // ==========================================
     // MCP Streamable HTTP / JSON-RPC endpoint
     // ==========================================
+
+    /**
+     * GET handler for MCP endpoint. Streamable HTTP clients may probe this
+     * for SSE streams. We don't support SSE, so return 405 Method Not Allowed.
+     * This prevents Spring from returning 401 for unhandled methods.
+     */
+    @GetMapping(value = {"", "/"})
+    public ResponseEntity<Map<String, String>> handleGet() {
+        return ResponseEntity.ok(Map.of(
+            "name", "ChartDB MCP Server",
+            "version", "1.20.2",
+            "protocol", "MCP JSON-RPC 2.0 over Streamable HTTP",
+            "endpoint", "POST /api/mcp"
+        ));
+    }
     
     /**
      * MCP JSON-RPC endpoint for Streamable HTTP transport.
@@ -55,7 +70,7 @@ public class MCPController {
             ? (Map<String, Object>) request.get("params") 
             : Map.of();
         
-        log.debug("MCP JSON-RPC: method={}, id={}", method, id);
+        log.info("MCP JSON-RPC: method={}, id={}, authenticated={}", method, id, currentUser != null);
         
         // Notifications (no id) - return 202 Accepted with no body
         if (id == null) {
@@ -63,14 +78,22 @@ public class MCPController {
         }
         
         try {
+            // Methods that don't require authentication
             Object result = switch (method) {
                 case "initialize" -> handleInitialize();
                 case "ping" -> Map.of();
                 case "tools/list" -> handleToolsList();
-                case "tools/call" -> handleToolsCallJsonRpc(currentUser, params);
-                case "resources/list" -> handleResourcesList();
-                case "resources/read" -> handleResourcesRead(currentUser, params);
                 case "prompts/list" -> handlePromptsList();
+                case "resources/list" -> handleResourcesList();
+                // Methods that require authentication
+                case "tools/call" -> {
+                    requireAuth(currentUser);
+                    yield handleToolsCallJsonRpc(currentUser, params);
+                }
+                case "resources/read" -> {
+                    requireAuth(currentUser);
+                    yield handleResourcesRead(currentUser, params);
+                }
                 case "prompts/get" -> handlePromptsGet(params);
                 default -> throw new IllegalArgumentException("Unknown method: " + method);
             };
@@ -79,9 +102,20 @@ public class MCPController {
             
         } catch (IllegalArgumentException e) {
             return ResponseEntity.ok(jsonRpcError(id, -32601, e.getMessage()));
+        } catch (SecurityException e) {
+            // IMPORTANT: Return HTTP 200 with JSON-RPC error, NOT HTTP 401.
+            // HTTP 401 triggers VS Code's OAuth discovery flow which we don't support.
+            log.warn("MCP auth required but no valid token provided for method={}", method);
+            return ResponseEntity.ok(jsonRpcError(id, -32600, "Authentication required. Provide a valid MCP API token as Bearer token in the Authorization header."));
         } catch (Exception e) {
             log.error("MCP JSON-RPC error: method={}", method, e);
             return ResponseEntity.ok(jsonRpcError(id, -32603, e.getMessage()));
+        }
+    }
+    
+    private void requireAuth(UserPrincipal currentUser) {
+        if (currentUser == null) {
+            throw new SecurityException("Authentication required for this operation");
         }
     }
     
@@ -236,6 +270,15 @@ public class MCPController {
                 Map<String, Object> prop = new LinkedHashMap<>();
                 prop.put("type", param.getType());
                 prop.put("description", param.getDescription());
+                // JSON Schema requires "items" for array types
+                if ("array".equals(param.getType())) {
+                    if (param.getItems() != null) {
+                        prop.put("items", param.getItems());
+                    } else {
+                        // Default: array of strings
+                        prop.put("items", Map.of("type", "string"));
+                    }
+                }
                 properties.put(paramName, prop);
                 if (param.isRequired()) {
                     required.add(paramName);
@@ -273,6 +316,27 @@ public class MCPController {
         return response;
     }
     
+    /**
+     * OAuth Protected Resource Metadata (RFC 9728).
+     * Returns metadata indicating Bearer tokens are accepted but NO authorization server exists.
+     * This prevents MCP clients from triggering OAuth flows — they should use static API tokens.
+     */
+    @GetMapping(value = "/.well-known/oauth-protected-resource", produces = "application/json")
+    public ResponseEntity<Map<String, Object>> mcpOAuthProtectedResource(
+            jakarta.servlet.http.HttpServletRequest request) {
+        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+        return ResponseEntity.ok(Map.of(
+            "resource", baseUrl + "/api/mcp",
+            "bearer_methods_supported", List.of("header"),
+            "resource_documentation", "https://chartdb.in/docs/mcp"
+        ));
+    }
+
+    @GetMapping("/.well-known/oauth-authorization-server")
+    public ResponseEntity<Void> mcpOAuthAuthorizationServer() {
+        return ResponseEntity.notFound().build();
+    }
+
     /**
      * MCP Discovery endpoint - Returns available tools, resources, and prompts
      */
@@ -313,44 +377,44 @@ public class MCPController {
     private Object executeToolCall(UserPrincipal currentUser, MCPToolCall toolCall) {
         return switch (toolCall.getName()) {
             // Diagram tools
-            case "chartdb/get-diagram" -> getDiagram(currentUser, toolCall);
-            case "chartdb/get-diagram-full" -> getDiagramFull(currentUser, toolCall);
-            case "chartdb/create-diagram" -> createDiagram(currentUser, toolCall);
-            case "chartdb/update-diagram" -> updateDiagram(currentUser, toolCall);
-            case "chartdb/delete-diagram" -> deleteDiagram(currentUser, toolCall);
-            case "chartdb/list-diagrams" -> listDiagrams(currentUser, toolCall);
+            case "chartdb_get-diagram" -> getDiagram(currentUser, toolCall);
+            case "chartdb_get-diagram-full" -> getDiagramFull(currentUser, toolCall);
+            case "chartdb_create-diagram" -> createDiagram(currentUser, toolCall);
+            case "chartdb_update-diagram" -> updateDiagram(currentUser, toolCall);
+            case "chartdb_delete-diagram" -> deleteDiagram(currentUser, toolCall);
+            case "chartdb_list-diagrams" -> listDiagrams(currentUser, toolCall);
             
             // Table tools
-            case "chartdb/create-table" -> createTable(currentUser, toolCall);
-            case "chartdb/update-table" -> updateTable(currentUser, toolCall);
-            case "chartdb/delete-table" -> deleteTable(currentUser, toolCall);
-            case "chartdb/move-table" -> moveTable(currentUser, toolCall);
-            case "chartdb/list-tables" -> listTables(currentUser, toolCall);
+            case "chartdb_create-table" -> createTable(currentUser, toolCall);
+            case "chartdb_update-table" -> updateTable(currentUser, toolCall);
+            case "chartdb_delete-table" -> deleteTable(currentUser, toolCall);
+            case "chartdb_move-table" -> moveTable(currentUser, toolCall);
+            case "chartdb_list-tables" -> listTables(currentUser, toolCall);
             
             // Column tools
-            case "chartdb/create-column" -> createColumn(currentUser, toolCall);
-            case "chartdb/update-column" -> updateColumn(currentUser, toolCall);
-            case "chartdb/delete-column" -> deleteColumn(currentUser, toolCall);
-            case "chartdb/reorder-columns" -> reorderColumns(currentUser, toolCall);
+            case "chartdb_create-column" -> createColumn(currentUser, toolCall);
+            case "chartdb_update-column" -> updateColumn(currentUser, toolCall);
+            case "chartdb_delete-column" -> deleteColumn(currentUser, toolCall);
+            case "chartdb_reorder-columns" -> reorderColumns(currentUser, toolCall);
             
             // Relationship tools
-            case "chartdb/create-relationship" -> createRelationship(currentUser, toolCall);
-            case "chartdb/update-relationship" -> updateRelationship(currentUser, toolCall);
-            case "chartdb/delete-relationship" -> deleteRelationship(currentUser, toolCall);
-            case "chartdb/list-relationships" -> listRelationships(currentUser, toolCall);
+            case "chartdb_create-relationship" -> createRelationship(currentUser, toolCall);
+            case "chartdb_update-relationship" -> updateRelationship(currentUser, toolCall);
+            case "chartdb_delete-relationship" -> deleteRelationship(currentUser, toolCall);
+            case "chartdb_list-relationships" -> listRelationships(currentUser, toolCall);
             
             // Export tools
-            case "chartdb/export-sql" -> exportSql(currentUser, toolCall);
-            case "chartdb/export-json" -> exportJson(currentUser, toolCall);
+            case "chartdb_export-sql" -> exportSql(currentUser, toolCall);
+            case "chartdb_export-json" -> exportJson(currentUser, toolCall);
             
             // Database connection tools
-            case "chartdb/create-connection" -> createConnection(currentUser, toolCall);
-            case "chartdb/test-connection" -> testConnection(currentUser, toolCall);
-            case "chartdb/list-connections" -> listConnections(currentUser, toolCall);
+            case "chartdb_create-connection" -> createConnection(currentUser, toolCall);
+            case "chartdb_test-connection" -> testConnection(currentUser, toolCall);
+            case "chartdb_list-connections" -> listConnections(currentUser, toolCall);
             
             // Query tools
-            case "chartdb/execute-query" -> executeQuery(currentUser, toolCall);
-            case "chartdb/get-query-history" -> getQueryHistory(currentUser, toolCall);
+            case "chartdb_execute-query" -> executeQuery(currentUser, toolCall);
+            case "chartdb_get-query-history" -> getQueryHistory(currentUser, toolCall);
             
             default -> throw new IllegalArgumentException("Unknown tool: " + toolCall.getName());
         };
@@ -450,7 +514,10 @@ public class MCPController {
     
     private TableResponse moveTable(UserPrincipal user, MCPToolCall call) {
         String tableId = call.getArguments().get("tableId").toString();
-        MoveTableRequest request = mapToRequest(call.getArguments(), MoveTableRequest.class);
+        MoveTableRequest request = MoveTableRequest.builder()
+            .positionX(new java.math.BigDecimal(call.getArguments().get("x").toString()))
+            .positionY(new java.math.BigDecimal(call.getArguments().get("y").toString()))
+            .build();
         return tableService.moveTable(tableId, user.getId(), request);
     }
     
@@ -524,12 +591,30 @@ public class MCPController {
     
     // Database connection operations
     private ConnectionResponse createConnection(UserPrincipal user, MCPToolCall call) {
-        CreateConnectionRequest request = mapToRequest(call.getArguments(), CreateConnectionRequest.class);
+        Map<String, Object> args = call.getArguments();
+        CreateConnectionRequest request = CreateConnectionRequest.builder()
+            .diagramId(args.get("diagramId").toString())
+            .name(args.get("name").toString())
+            .databaseType(args.get("type").toString())
+            .host(args.get("host").toString())
+            .port(Integer.valueOf(args.get("port").toString()))
+            .databaseName(args.get("database").toString())
+            .username(args.get("username").toString())
+            .password(args.get("password").toString())
+            .build();
         return connectionService.createConnection(user.getId(), request);
     }
     
     private ConnectionTestResult testConnection(UserPrincipal user, MCPToolCall call) {
-        TestConnectionRequest request = mapToRequest(call.getArguments(), TestConnectionRequest.class);
+        Map<String, Object> args = call.getArguments();
+        TestConnectionRequest request = TestConnectionRequest.builder()
+            .databaseType(args.containsKey("type") ? args.get("type").toString() : "postgresql")
+            .host(args.get("host").toString())
+            .port(Integer.valueOf(args.get("port").toString()))
+            .databaseName(args.get("database").toString())
+            .username(args.get("username").toString())
+            .password(args.get("password").toString())
+            .build();
         return connectionService.testConnection(request);
     }
     
@@ -555,81 +640,91 @@ public class MCPController {
     private List<MCPTool> getAvailableTools() {
         return List.of(
             // Diagram tools
-            MCPTool.of("chartdb/get-diagram", "Get diagram by ID", 
+            MCPTool.of("chartdb_get-diagram", "Get diagram by ID", 
                 Map.of("diagramId", MCPParameter.required("string", "Diagram ID"))),
-            MCPTool.of("chartdb/get-diagram-full", "Get full diagram with all tables, columns, and relationships", 
+            MCPTool.of("chartdb_get-diagram-full", "Get full diagram with all tables, columns, and relationships", 
                 Map.of("diagramId", MCPParameter.required("string", "Diagram ID"))),
-            MCPTool.of("chartdb/create-diagram", "Create a new diagram", 
+            MCPTool.of("chartdb_create-diagram", "Create a new diagram", 
                 Map.of("name", MCPParameter.required("string", "Diagram name"),
                        "databaseType", MCPParameter.optional("string", "Database type (postgresql, mysql, etc.)"))),
-            MCPTool.of("chartdb/update-diagram", "Update diagram properties", 
+            MCPTool.of("chartdb_update-diagram", "Update diagram properties", 
                 Map.of("diagramId", MCPParameter.required("string", "Diagram ID"),
                        "name", MCPParameter.optional("string", "New name"))),
-            MCPTool.of("chartdb/delete-diagram", "Delete a diagram", 
+            MCPTool.of("chartdb_delete-diagram", "Delete a diagram", 
                 Map.of("diagramId", MCPParameter.required("string", "Diagram ID"))),
-            MCPTool.of("chartdb/list-diagrams", "List user's diagrams", 
+            MCPTool.of("chartdb_list-diagrams", "List user's diagrams", 
                 Map.of("limit", MCPParameter.optional("number", "Maximum number of diagrams to return"))),
             
             // Table tools
-            MCPTool.of("chartdb/create-table", "Create a new table in diagram", 
+            MCPTool.of("chartdb_create-table", "Create a new table in diagram", 
                 Map.of("diagramId", MCPParameter.required("string", "Diagram ID"),
                        "name", MCPParameter.required("string", "Table name"),
                        "schema", MCPParameter.optional("string", "Schema name"),
-                       "columns", MCPParameter.optional("array", "Array of column definitions"))),
-            MCPTool.of("chartdb/update-table", "Update table properties", 
+                       "columns", MCPParameter.optionalArray("Array of column definitions", Map.of(
+                           "type", "object",
+                           "properties", Map.of(
+                               "name", Map.of("type", "string", "description", "Column name"),
+                               "type", Map.of("type", "string", "description", "Data type (e.g. varchar, integer, boolean)"),
+                               "nullable", Map.of("type", "boolean", "description", "Is nullable"),
+                               "primaryKey", Map.of("type", "boolean", "description", "Is primary key"),
+                               "unique", Map.of("type", "boolean", "description", "Is unique")
+                           ),
+                           "required", List.of("name", "type")
+                       )))),
+            MCPTool.of("chartdb_update-table", "Update table properties", 
                 Map.of("tableId", MCPParameter.required("string", "Table ID"),
                        "name", MCPParameter.optional("string", "New table name"),
                        "color", MCPParameter.optional("string", "Table color"))),
-            MCPTool.of("chartdb/delete-table", "Delete a table", 
+            MCPTool.of("chartdb_delete-table", "Delete a table", 
                 Map.of("tableId", MCPParameter.required("string", "Table ID"))),
-            MCPTool.of("chartdb/move-table", "Move table position", 
+            MCPTool.of("chartdb_move-table", "Move table position", 
                 Map.of("tableId", MCPParameter.required("string", "Table ID"),
                        "x", MCPParameter.required("number", "X coordinate"),
                        "y", MCPParameter.required("number", "Y coordinate"))),
-            MCPTool.of("chartdb/list-tables", "List all tables in diagram", 
+            MCPTool.of("chartdb_list-tables", "List all tables in diagram", 
                 Map.of("diagramId", MCPParameter.required("string", "Diagram ID"))),
             
             // Column tools
-            MCPTool.of("chartdb/create-column", "Add column to table", 
+            MCPTool.of("chartdb_create-column", "Add column to table", 
                 Map.of("tableId", MCPParameter.required("string", "Table ID"),
                        "name", MCPParameter.required("string", "Column name"),
                        "type", MCPParameter.required("string", "Data type"),
                        "nullable", MCPParameter.optional("boolean", "Is nullable"),
                        "primaryKey", MCPParameter.optional("boolean", "Is primary key"),
                        "unique", MCPParameter.optional("boolean", "Is unique"))),
-            MCPTool.of("chartdb/update-column", "Update column properties", 
+            MCPTool.of("chartdb_update-column", "Update column properties", 
                 Map.of("columnId", MCPParameter.required("string", "Column ID"),
                        "name", MCPParameter.optional("string", "New column name"),
                        "type", MCPParameter.optional("string", "New data type"))),
-            MCPTool.of("chartdb/delete-column", "Delete a column", 
+            MCPTool.of("chartdb_delete-column", "Delete a column", 
                 Map.of("columnId", MCPParameter.required("string", "Column ID"))),
-            MCPTool.of("chartdb/reorder-columns", "Reorder columns in table", 
+            MCPTool.of("chartdb_reorder-columns", "Reorder columns in table", 
                 Map.of("tableId", MCPParameter.required("string", "Table ID"),
-                       "columnIds", MCPParameter.required("array", "Array of column IDs in new order"))),
+                       "columnIds", MCPParameter.requiredArray("Array of column IDs in new order", Map.of("type", "string")))),
             
             // Relationship tools
-            MCPTool.of("chartdb/create-relationship", "Create relationship between tables", 
+            MCPTool.of("chartdb_create-relationship", "Create relationship between tables", 
                 Map.of("diagramId", MCPParameter.required("string", "Diagram ID"),
                        "sourceTableId", MCPParameter.required("string", "Source table ID"),
                        "targetTableId", MCPParameter.required("string", "Target table ID"),
                        "type", MCPParameter.required("string", "Relationship type (one-to-one, one-to-many, many-to-many)"))),
-            MCPTool.of("chartdb/update-relationship", "Update relationship", 
+            MCPTool.of("chartdb_update-relationship", "Update relationship", 
                 Map.of("relationshipId", MCPParameter.required("string", "Relationship ID"),
                        "type", MCPParameter.optional("string", "New relationship type"))),
-            MCPTool.of("chartdb/delete-relationship", "Delete a relationship", 
+            MCPTool.of("chartdb_delete-relationship", "Delete a relationship", 
                 Map.of("relationshipId", MCPParameter.required("string", "Relationship ID"))),
-            MCPTool.of("chartdb/list-relationships", "List all relationships in diagram", 
+            MCPTool.of("chartdb_list-relationships", "List all relationships in diagram", 
                 Map.of("diagramId", MCPParameter.required("string", "Diagram ID"))),
             
             // Export tools
-            MCPTool.of("chartdb/export-sql", "Export diagram as SQL DDL", 
+            MCPTool.of("chartdb_export-sql", "Export diagram as SQL DDL", 
                 Map.of("diagramId", MCPParameter.required("string", "Diagram ID"),
                        "dialect", MCPParameter.optional("string", "SQL dialect (postgresql, mysql, sqlite, etc.)"))),
-            MCPTool.of("chartdb/export-json", "Export diagram as JSON", 
+            MCPTool.of("chartdb_export-json", "Export diagram as JSON", 
                 Map.of("diagramId", MCPParameter.required("string", "Diagram ID"))),
             
             // Database connection tools
-            MCPTool.of("chartdb/create-connection", "Create database connection", 
+            MCPTool.of("chartdb_create-connection", "Create database connection", 
                 Map.of("diagramId", MCPParameter.required("string", "Diagram ID"),
                        "name", MCPParameter.required("string", "Connection name"),
                        "type", MCPParameter.required("string", "Database type"),
@@ -638,20 +733,20 @@ public class MCPController {
                        "database", MCPParameter.required("string", "Database name"),
                        "username", MCPParameter.required("string", "Username"),
                        "password", MCPParameter.required("string", "Password"))),
-            MCPTool.of("chartdb/test-connection", "Test database connection", 
+            MCPTool.of("chartdb_test-connection", "Test database connection", 
                 Map.of("host", MCPParameter.required("string", "Database host"),
                        "port", MCPParameter.required("number", "Database port"),
                        "database", MCPParameter.required("string", "Database name"),
                        "username", MCPParameter.required("string", "Username"),
                        "password", MCPParameter.required("string", "Password"))),
-            MCPTool.of("chartdb/list-connections", "List database connections for diagram", 
+            MCPTool.of("chartdb_list-connections", "List database connections for diagram", 
                 Map.of("diagramId", MCPParameter.required("string", "Diagram ID"))),
             
             // Query tools
-            MCPTool.of("chartdb/execute-query", "Execute SQL query", 
+            MCPTool.of("chartdb_execute-query", "Execute SQL query", 
                 Map.of("connectionId", MCPParameter.required("string", "Connection ID"),
                        "query", MCPParameter.required("string", "SQL query to execute"))),
-            MCPTool.of("chartdb/get-query-history", "Get query execution history", 
+            MCPTool.of("chartdb_get-query-history", "Get query execution history", 
                 Map.of())
         );
     }

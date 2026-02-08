@@ -112,8 +112,12 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health").permitAll()
                 // OAuth2 endpoints
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
-                // MCP discovery endpoint
-                .requestMatchers("/api/mcp/.well-known/mcp.json").permitAll()
+                // Well-known discovery endpoints (prevents 401 on OAuth/MCP metadata discovery)
+                .requestMatchers("/.well-known/**").permitAll()
+                // OAuth standard endpoints - return 404 so MCP clients don't trigger OAuth flow
+                .requestMatchers("/authorize", "/token", "/register").permitAll()
+                // MCP endpoints (JSON-RPC handles auth internally per method)
+                .requestMatchers("/api/mcp", "/api/mcp/**").permitAll()
                 // Swagger/OpenAPI
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 // All other endpoints require authentication
