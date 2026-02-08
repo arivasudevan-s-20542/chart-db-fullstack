@@ -380,8 +380,8 @@ class WebSocketService {
         type: DiagramEventType,
         payload: any
     ): void {
-        this.sendMessage(`/app/diagram/${diagramId}/event`, { 
-            type, 
+        this.sendMessage(`/app/diagram/${diagramId}/event`, {
+            type,
             payload,
             sessionId: this.sessionId, // Include session ID for echo prevention
         });

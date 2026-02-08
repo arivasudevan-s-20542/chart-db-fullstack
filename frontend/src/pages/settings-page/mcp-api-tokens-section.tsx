@@ -311,13 +311,13 @@ export const McpApiTokensSection: React.FC = () => {
                                 key={token.id}
                                 className={`flex items-center justify-between rounded-lg border p-3 ${
                                     !token.active
-                                        ? 'opacity-50 bg-muted/30'
+                                        ? 'bg-muted/30 opacity-50'
                                         : ''
                                 }`}
                             >
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-2">
-                                        <span className="font-medium truncate">
+                                        <span className="truncate font-medium">
                                             {token.name}
                                         </span>
                                         {token.active ? (
@@ -377,7 +377,8 @@ export const McpApiTokensSection: React.FC = () => {
                     </h4>
                     <div className="space-y-2 text-xs text-muted-foreground">
                         <p>
-                            <strong>Claude Desktop</strong> (claude_desktop_config.json):
+                            <strong>Claude Desktop</strong>{' '}
+                            (claude_desktop_config.json):
                         </p>
                         <pre className="overflow-x-auto rounded bg-muted p-2 text-[11px]">
                             {`{

@@ -329,8 +329,7 @@ export const RealtimeSyncManager: React.FC = () => {
                                                 x: update.x ?? table.x,
                                                 y: update.y ?? table.y,
                                                 width:
-                                                    update.width ??
-                                                    table.width,
+                                                    update.width ?? table.width,
                                             };
                                         }
                                         return table;
@@ -360,7 +359,8 @@ export const RealtimeSyncManager: React.FC = () => {
                             // Ensure field has required properties
                             const fieldWithDefaults = {
                                 ...event.payload.field,
-                                createdAt: event.payload.field.createdAt ?? Date.now(),
+                                createdAt:
+                                    event.payload.field.createdAt ?? Date.now(),
                             };
                             await addField(
                                 event.payload.tableId,
