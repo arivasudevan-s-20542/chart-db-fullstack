@@ -6,13 +6,15 @@ import com.chartdb.dto.response.*;
 import com.chartdb.security.CurrentUser;
 import com.chartdb.security.UserPrincipal;
 import com.chartdb.service.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * MCP (Model Context Protocol) Controller
@@ -21,6 +23,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/mcp")
 @RequiredArgsConstructor
+@Slf4j
 public class MCPController {
     
     private final DiagramService diagramService;
@@ -30,6 +33,245 @@ public class MCPController {
     private final ExportService exportService;
     private final DatabaseConnectionService connectionService;
     private final QueryExecutionService queryExecutionService;
+    private final ObjectMapper objectMapper;
+    
+    // ==========================================
+    // MCP Streamable HTTP / JSON-RPC endpoint
+    // ==========================================
+    
+    /**
+     * MCP JSON-RPC endpoint for Streamable HTTP transport.
+     * Handles VS Code and Claude Desktop MCP protocol messages.
+     */
+    @SuppressWarnings("unchecked")
+    @PostMapping(value = "", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<Map<String, Object>> handleJsonRpc(
+            @CurrentUser UserPrincipal currentUser,
+            @RequestBody Map<String, Object> request) {
+        
+        Object id = request.get("id");
+        String method = (String) request.get("method");
+        Map<String, Object> params = request.containsKey("params") 
+            ? (Map<String, Object>) request.get("params") 
+            : Map.of();
+        
+        log.debug("MCP JSON-RPC: method={}, id={}", method, id);
+        
+        // Notifications (no id) - return 202 Accepted with no body
+        if (id == null) {
+            return ResponseEntity.accepted().build();
+        }
+        
+        try {
+            Object result = switch (method) {
+                case "initialize" -> handleInitialize();
+                case "ping" -> Map.of();
+                case "tools/list" -> handleToolsList();
+                case "tools/call" -> handleToolsCallJsonRpc(currentUser, params);
+                case "resources/list" -> handleResourcesList();
+                case "resources/read" -> handleResourcesRead(currentUser, params);
+                case "prompts/list" -> handlePromptsList();
+                case "prompts/get" -> handlePromptsGet(params);
+                default -> throw new IllegalArgumentException("Unknown method: " + method);
+            };
+            
+            return ResponseEntity.ok(jsonRpcResponse(id, result));
+            
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.ok(jsonRpcError(id, -32601, e.getMessage()));
+        } catch (Exception e) {
+            log.error("MCP JSON-RPC error: method={}", method, e);
+            return ResponseEntity.ok(jsonRpcError(id, -32603, e.getMessage()));
+        }
+    }
+    
+    private Map<String, Object> handleInitialize() {
+        return Map.of(
+            "protocolVersion", "2024-11-05",
+            "capabilities", Map.of(
+                "tools", Map.of("listChanged", false),
+                "resources", Map.of("listChanged", false),
+                "prompts", Map.of("listChanged", false)
+            ),
+            "serverInfo", Map.of(
+                "name", "ChartDB MCP Server",
+                "version", "1.20.2"
+            )
+        );
+    }
+    
+    private Map<String, Object> handleToolsList() {
+        List<Map<String, Object>> tools = getAvailableTools().stream()
+            .map(this::toolToJsonSchema)
+            .collect(Collectors.toList());
+        return Map.of("tools", tools);
+    }
+    
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> handleToolsCallJsonRpc(UserPrincipal currentUser, Map<String, Object> params) {
+        String toolName = (String) params.get("name");
+        Map<String, Object> arguments = params.containsKey("arguments") 
+            ? (Map<String, Object>) params.get("arguments") 
+            : Map.of();
+        
+        MCPToolCall toolCall = MCPToolCall.builder()
+            .name(toolName)
+            .arguments(arguments)
+            .build();
+        
+        Object result = executeToolCall(currentUser, toolCall);
+        
+        // Wrap in MCP content format
+        String text;
+        try {
+            text = objectMapper.writeValueAsString(result);
+        } catch (Exception e) {
+            text = String.valueOf(result);
+        }
+        
+        return Map.of(
+            "content", List.of(Map.of("type", "text", "text", text)),
+            "isError", false
+        );
+    }
+    
+    private Map<String, Object> handleResourcesList() {
+        List<Map<String, Object>> resources = getAvailableResources().stream()
+            .map(r -> {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("uri", r.getUri());
+                m.put("name", r.getDescription());
+                m.put("mimeType", r.getMimeType());
+                return m;
+            })
+            .collect(Collectors.toList());
+        return Map.of("resources", resources);
+    }
+    
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> handleResourcesRead(UserPrincipal currentUser, Map<String, Object> params) {
+        String uri = (String) params.get("uri");
+        // Parse URI like "chartdb://diagram/123/schema"
+        String path = uri.replace("chartdb://", "");
+        String[] parts = path.split("/");
+        
+        if (parts.length < 2) {
+            throw new IllegalArgumentException("Invalid resource URI: " + uri);
+        }
+        
+        String resourceType = parts[0];
+        String diagramId = parts[1];
+        String subResource = parts.length > 2 ? parts[2] : null;
+        
+        Object data = switch (resourceType) {
+            case "diagram" -> {
+                if ("schema".equals(subResource)) {
+                    yield diagramService.getFullDiagram(diagramId, currentUser.getId());
+                } else if ("tables".equals(subResource)) {
+                    yield tableService.getDiagramTables(diagramId, currentUser.getId());
+                } else if ("relationships".equals(subResource)) {
+                    yield relationshipService.getDiagramRelationships(diagramId, currentUser.getId());
+                } else {
+                    yield diagramService.getDiagram(diagramId, currentUser.getId());
+                }
+            }
+            default -> throw new IllegalArgumentException("Unknown resource type: " + resourceType);
+        };
+        
+        String text;
+        try {
+            text = objectMapper.writeValueAsString(data);
+        } catch (Exception e) {
+            text = String.valueOf(data);
+        }
+        
+        return Map.of("contents", List.of(Map.of(
+            "uri", uri,
+            "mimeType", "application/json",
+            "text", text
+        )));
+    }
+    
+    private Map<String, Object> handlePromptsList() {
+        List<Map<String, Object>> prompts = getAvailablePrompts().stream()
+            .map(p -> {
+                List<Map<String, Object>> args = p.getParameters().entrySet().stream()
+                    .map(e -> {
+                        Map<String, Object> arg = new LinkedHashMap<>();
+                        arg.put("name", e.getKey());
+                        arg.put("description", e.getValue().getDescription());
+                        arg.put("required", e.getValue().isRequired());
+                        return arg;
+                    })
+                    .collect(Collectors.toList());
+                return Map.<String, Object>of(
+                    "name", p.getName(),
+                    "description", p.getDescription(),
+                    "arguments", args
+                );
+            })
+            .collect(Collectors.toList());
+        return Map.of("prompts", prompts);
+    }
+    
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> handlePromptsGet(Map<String, Object> params) {
+        String name = (String) params.get("name");
+        return Map.of(
+            "description", "Prompt: " + name,
+            "messages", List.of(Map.of(
+                "role", "user",
+                "content", Map.of("type", "text", "text", "Execute prompt: " + name)
+            ))
+        );
+    }
+    
+    // Convert MCPTool to JSON Schema format for tools/list
+    private Map<String, Object> toolToJsonSchema(MCPTool tool) {
+        Map<String, Object> properties = new LinkedHashMap<>();
+        List<String> required = new ArrayList<>();
+        
+        if (tool.getParameters() != null) {
+            tool.getParameters().forEach((paramName, param) -> {
+                Map<String, Object> prop = new LinkedHashMap<>();
+                prop.put("type", param.getType());
+                prop.put("description", param.getDescription());
+                properties.put(paramName, prop);
+                if (param.isRequired()) {
+                    required.add(paramName);
+                }
+            });
+        }
+        
+        Map<String, Object> inputSchema = new LinkedHashMap<>();
+        inputSchema.put("type", "object");
+        inputSchema.put("properties", properties);
+        if (!required.isEmpty()) {
+            inputSchema.put("required", required);
+        }
+        
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("name", tool.getName());
+        result.put("description", tool.getDescription());
+        result.put("inputSchema", inputSchema);
+        return result;
+    }
+    
+    private Map<String, Object> jsonRpcResponse(Object id, Object result) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("jsonrpc", "2.0");
+        response.put("id", id);
+        response.put("result", result);
+        return response;
+    }
+    
+    private Map<String, Object> jsonRpcError(Object id, int code, String message) {
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("jsonrpc", "2.0");
+        response.put("id", id);
+        response.put("error", Map.of("code", code, "message", message != null ? message : "Internal error"));
+        return response;
+    }
     
     /**
      * MCP Discovery endpoint - Returns available tools, resources, and prompts
@@ -54,14 +296,22 @@ public class MCPController {
     }
     
     /**
-     * Execute MCP tool call
+     * Execute MCP tool call (REST endpoint)
      */
     @PostMapping("/tools/call")
     public ResponseEntity<ApiResponse<Object>> callTool(
             @CurrentUser UserPrincipal currentUser,
             @Valid @RequestBody MCPToolCall toolCall) {
         
-        Object result = switch (toolCall.getName()) {
+        Object result = executeToolCall(currentUser, toolCall);
+        return ResponseEntity.ok(ApiResponse.success("Tool executed successfully", result));
+    }
+    
+    /**
+     * Shared tool execution logic used by both REST and JSON-RPC endpoints
+     */
+    private Object executeToolCall(UserPrincipal currentUser, MCPToolCall toolCall) {
+        return switch (toolCall.getName()) {
             // Diagram tools
             case "chartdb/get-diagram" -> getDiagram(currentUser, toolCall);
             case "chartdb/get-diagram-full" -> getDiagramFull(currentUser, toolCall);
@@ -104,8 +354,6 @@ public class MCPController {
             
             default -> throw new IllegalArgumentException("Unknown tool: " + toolCall.getName());
         };
-        
-        return ResponseEntity.ok(ApiResponse.success("Tool executed successfully", result));
     }
     
     /**
@@ -433,11 +681,9 @@ public class MCPController {
     
     @SuppressWarnings("unchecked")
     private <T> T mapToRequest(Map<String, Object> arguments, Class<T> clazz) {
-        // Simple mapping - in production, use ObjectMapper for robust conversion
         try {
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            String json = mapper.writeValueAsString(arguments);
-            return mapper.readValue(json, clazz);
+            String json = objectMapper.writeValueAsString(arguments);
+            return objectMapper.readValue(json, clazz);
         } catch (Exception e) {
             throw new RuntimeException("Failed to map arguments to request object", e);
         }
