@@ -377,11 +377,10 @@ export const McpApiTokensSection: React.FC = () => {
                     </h4>
                     <div className="space-y-2 text-xs text-muted-foreground">
                         <p>
-                            <strong>Claude Desktop</strong>
-                            (claude_desktop_config.json):
+                            <strong>Claude Desktop</strong> (claude_desktop_config.json):
                         </p>
                         <pre className="overflow-x-auto rounded bg-muted p-2 text-[11px]">
-{`{
+                            {`{
   "mcpServers": {
     "chartdb": {
       "url": "${window.location.origin}/api/mcp",
@@ -396,7 +395,7 @@ export const McpApiTokensSection: React.FC = () => {
                             <strong>cURL test:</strong>
                         </p>
                         <pre className="overflow-x-auto rounded bg-muted p-2 text-[11px]">
-{`curl -H "Authorization: Bearer <your-token>" \\
+                            {`curl -H "Authorization: Bearer <your-token>" \\
   ${window.location.origin}/api/mcp/.well-known/mcp.json`}
                         </pre>
                     </div>

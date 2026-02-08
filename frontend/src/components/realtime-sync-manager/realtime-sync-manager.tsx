@@ -310,25 +310,35 @@ export const RealtimeSyncManager: React.FC = () => {
                             event.payload?.tables?.length,
                             'tables'
                         );
-                        if (event.payload?.tables && Array.isArray(event.payload.tables)) {
+                        if (
+                            event.payload?.tables &&
+                            Array.isArray(event.payload.tables)
+                        ) {
                             // Apply batch position updates efficiently
                             await updateTablesState(
                                 (currentTables) =>
                                     currentTables.map((table) => {
-                                        const update = event.payload.tables.find(
-                                            (t: { id: string }) => t.id === table.id
-                                        );
+                                        const update =
+                                            event.payload.tables.find(
+                                                (t: { id: string }) =>
+                                                    t.id === table.id
+                                            );
                                         if (update) {
                                             return {
                                                 ...table,
                                                 x: update.x ?? table.x,
                                                 y: update.y ?? table.y,
-                                                width: update.width ?? table.width,
+                                                width:
+                                                    update.width ??
+                                                    table.width,
                                             };
                                         }
                                         return table;
                                     }),
-                                { updateHistory: false, forceOverride: false }
+                                {
+                                    updateHistory: false,
+                                    forceOverride: false,
+                                }
                             );
                         }
                         break;

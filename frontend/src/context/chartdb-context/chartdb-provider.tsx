@@ -634,7 +634,7 @@ export const ChartDBProvider: React.FC<
                 y: number;
                 width?: number;
             }> = [];
-            
+
             for (const updatedTable of updatedTables) {
                 const prevTable = prevTables.find(
                     (t) => t.id === updatedTable.id
