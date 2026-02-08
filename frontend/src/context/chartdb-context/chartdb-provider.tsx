@@ -651,7 +651,7 @@ export const ChartDBProvider: React.FC<
                             id: updatedTable.id,
                             x: updatedTable.x ?? prevTable.x,
                             y: updatedTable.y ?? prevTable.y,
-                            width: updatedTable.width,
+                            width: updatedTable.width ?? undefined,
                         });
                     }
                 }
