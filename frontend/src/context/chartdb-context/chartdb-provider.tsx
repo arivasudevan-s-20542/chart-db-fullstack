@@ -627,27 +627,37 @@ export const ChartDBProvider: React.FC<
                 });
             }
 
-            // Emit events for updated tables (e.g., position changes)
+            // Collect all tables with position/size changes for batch update event
+            const tablesWithChanges: Array<{ id: string; x: number; y: number; width?: number }> = [];
+            
             for (const updatedTable of updatedTables) {
                 const prevTable = prevTables.find(
                     (t) => t.id === updatedTable.id
                 );
                 if (prevTable) {
-                    // Check if something actually changed
-                    const hasChanges =
+                    // Check if position/size changed
+                    const hasPositionChanges =
                         prevTable.x !== updatedTable.x ||
                         prevTable.y !== updatedTable.y ||
-                        prevTable.width !== updatedTable.width ||
-                        prevTable.name !== updatedTable.name ||
-                        prevTable.order !== updatedTable.order;
+                        prevTable.width !== updatedTable.width;
 
-                    if (hasChanges) {
-                        events.emit({
-                            action: 'update_table',
-                            data: { id: updatedTable.id, table: updatedTable },
+                    if (hasPositionChanges) {
+                        tablesWithChanges.push({
+                            id: updatedTable.id,
+                            x: updatedTable.x ?? prevTable.x,
+                            y: updatedTable.y ?? prevTable.y,
+                            width: updatedTable.width,
                         });
                     }
                 }
+            }
+
+            // Emit batch event for position changes (more efficient for auto-arrange)
+            if (tablesWithChanges.length > 0) {
+                events.emit({
+                    action: 'update_tables_batch',
+                    data: { tables: tablesWithChanges },
+                });
             }
 
             const promises = [];
@@ -1036,7 +1046,7 @@ export const ChartDBProvider: React.FC<
                 resetRedoStack();
             }
         },
-        [db, diagramId, setTables, addUndoAction, resetRedoStack]
+        [db, diagramId, setTables, addUndoAction, resetRedoStack, events]
     );
 
     const removeIndex: ChartDBContext['removeIndex'] = useCallback(
@@ -1101,7 +1111,7 @@ export const ChartDBProvider: React.FC<
                 resetRedoStack();
             }
         },
-        [db, diagramId, setTables, addUndoAction, resetRedoStack, getIndex]
+        [db, diagramId, setTables, addUndoAction, resetRedoStack, getIndex, events]
     );
 
     const createIndex: ChartDBContext['createIndex'] = useCallback(
@@ -1182,7 +1192,7 @@ export const ChartDBProvider: React.FC<
                 resetRedoStack();
             }
         },
-        [db, diagramId, setTables, addUndoAction, resetRedoStack, getIndex]
+        [db, diagramId, setTables, addUndoAction, resetRedoStack, getIndex, events]
     );
 
     const addRelationships: ChartDBContext['addRelationships'] = useCallback(

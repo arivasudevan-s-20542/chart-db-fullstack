@@ -8,6 +8,7 @@ export type DiagramEventType =
     | 'TABLE_CREATED'
     | 'TABLE_UPDATED'
     | 'TABLE_DELETED'
+    | 'TABLES_BATCH_UPDATED' // For auto-arrange and bulk position changes
     | 'COLUMN_CREATED'
     | 'COLUMN_UPDATED'
     | 'COLUMN_DELETED'
@@ -372,13 +373,18 @@ class WebSocketService {
 
     /**
      * Send a diagram event (for real-time updates)
+     * Includes sessionId so receivers can filter out their own events
      */
     sendDiagramEvent(
         diagramId: string,
         type: DiagramEventType,
         payload: any
     ): void {
-        this.sendMessage(`/app/diagram/${diagramId}/event`, { type, payload });
+        this.sendMessage(`/app/diagram/${diagramId}/event`, { 
+            type, 
+            payload,
+            sessionId: this.sessionId, // Include session ID for echo prevention
+        });
     }
 
     /**

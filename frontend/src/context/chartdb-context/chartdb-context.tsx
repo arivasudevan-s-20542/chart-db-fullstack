@@ -17,6 +17,7 @@ import type { Note } from '@/lib/domain/note';
 export type ChartDBEventType =
     | 'add_tables'
     | 'update_table'
+    | 'update_tables_batch' // For auto-arrange and bulk position updates
     | 'remove_tables'
     | 'add_field'
     | 'update_field'
@@ -133,9 +134,16 @@ export type UpdateNoteEvent = ChartDBEventBase<
     { noteId: string; note: Partial<Note> }
 >;
 
+// Batch update event for auto-arrange and bulk operations
+export type UpdateTablesBatchEvent = ChartDBEventBase<
+    'update_tables_batch',
+    { tables: Array<{ id: string; x: number; y: number; width?: number }> }
+>;
+
 export type ChartDBEvent =
     | CreateTableEvent
     | UpdateTableEvent
+    | UpdateTablesBatchEvent
     | RemoveTableEvent
     | AddFieldEvent
     | UpdateFieldEvent

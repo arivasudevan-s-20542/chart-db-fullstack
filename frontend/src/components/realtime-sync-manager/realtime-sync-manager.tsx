@@ -21,6 +21,7 @@ export const RealtimeSyncManager: React.FC = () => {
         events,
         addTable,
         updateTable,
+        updateTablesState,
         removeTable,
         addField,
         updateField,
@@ -166,7 +167,7 @@ export const RealtimeSyncManager: React.FC = () => {
                     wsEventType = 'RELATIONSHIP_UPDATED';
                     payload = {
                         relationshipId: event.data.relationshipId,
-                        relationship: event.data.relationship,
+                        changes: event.data.relationship, // Use 'changes' to match receiver
                     };
                     break;
 
@@ -204,6 +205,12 @@ export const RealtimeSyncManager: React.FC = () => {
                         noteId: event.data.noteId,
                         changes: event.data.note,
                     };
+                    break;
+
+                case 'update_tables_batch':
+                    // Batch update for auto-arrange and bulk position changes
+                    wsEventType = 'TABLES_BATCH_UPDATED';
+                    payload = { tables: event.data.tables };
                     break;
 
                 default:
@@ -269,7 +276,13 @@ export const RealtimeSyncManager: React.FC = () => {
                     case 'TABLE_CREATED':
                         console.log('[RealtimeSync] Applying TABLE_CREATED');
                         if (event.payload?.table) {
-                            await addTable(event.payload.table, {
+                            // Ensure fields array exists to prevent crashes
+                            const tableWithDefaults = {
+                                ...event.payload.table,
+                                fields: event.payload.table.fields ?? [],
+                                indexes: event.payload.table.indexes ?? [],
+                            };
+                            await addTable(tableWithDefaults, {
                                 updateHistory: false,
                             });
                         }
@@ -291,6 +304,35 @@ export const RealtimeSyncManager: React.FC = () => {
                         }
                         break;
 
+                    case 'TABLES_BATCH_UPDATED':
+                        console.log(
+                            '[RealtimeSync] Applying TABLES_BATCH_UPDATED:',
+                            event.payload?.tables?.length,
+                            'tables'
+                        );
+                        if (event.payload?.tables && Array.isArray(event.payload.tables)) {
+                            // Apply batch position updates efficiently
+                            await updateTablesState(
+                                (currentTables) =>
+                                    currentTables.map((table) => {
+                                        const update = event.payload.tables.find(
+                                            (t: { id: string }) => t.id === table.id
+                                        );
+                                        if (update) {
+                                            return {
+                                                ...table,
+                                                x: update.x ?? table.x,
+                                                y: update.y ?? table.y,
+                                                width: update.width ?? table.width,
+                                            };
+                                        }
+                                        return table;
+                                    }),
+                                { updateHistory: false, forceOverride: false }
+                            );
+                        }
+                        break;
+
                     case 'TABLE_DELETED':
                         if (event.payload?.tableId) {
                             await removeTable(event.payload.tableId, {
@@ -300,10 +342,19 @@ export const RealtimeSyncManager: React.FC = () => {
                         break;
 
                     case 'COLUMN_CREATED':
+                        console.log(
+                            '[RealtimeSync] Applying COLUMN_CREATED:',
+                            event.payload
+                        );
                         if (event.payload?.tableId && event.payload?.field) {
+                            // Ensure field has required properties
+                            const fieldWithDefaults = {
+                                ...event.payload.field,
+                                createdAt: event.payload.field.createdAt ?? Date.now(),
+                            };
                             await addField(
                                 event.payload.tableId,
-                                event.payload.field,
+                                fieldWithDefaults,
                                 {
                                     updateHistory: false,
                                 }
@@ -511,10 +562,14 @@ export const RealtimeSyncManager: React.FC = () => {
         subscribe,
         addTable,
         updateTable,
+        updateTablesState,
         removeTable,
         addField,
         updateField,
         removeField,
+        addIndex,
+        updateIndex,
+        removeIndex,
         addRelationship,
         updateRelationship,
         removeRelationship,

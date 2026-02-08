@@ -131,7 +131,7 @@ export const TableNode: React.FC<NodeProps<TableNodeType>> = React.memo(
             isSummaryOnly,
         } = useDiff();
 
-        const fields = useMemo(() => table.fields, [table.fields]);
+        const fields = useMemo(() => table.fields ?? [], [table.fields]);
 
         // Effect to manage field count when entering/exiting edit mode
         useEffect(() => {

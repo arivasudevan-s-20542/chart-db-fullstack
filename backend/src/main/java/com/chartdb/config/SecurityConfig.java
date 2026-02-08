@@ -108,6 +108,8 @@ public class SecurityConfig {
                 .requestMatchers("/actuator/health").permitAll()
                 // OAuth2 endpoints
                 .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+                // MCP discovery endpoint
+                .requestMatchers("/api/mcp/.well-known/mcp.json").permitAll()
                 // Swagger/OpenAPI
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                 // All other endpoints require authentication
