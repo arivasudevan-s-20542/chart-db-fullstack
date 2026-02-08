@@ -31,6 +31,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain) throws ServletException, IOException {
         
         try {
+            // Skip if already authenticated (e.g., by MCP API token filter)
+            if (SecurityContextHolder.getContext().getAuthentication() != null
+                    && SecurityContextHolder.getContext().getAuthentication().isAuthenticated()) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+            
             String jwt = getJwtFromRequest(request);
             
             if (StringUtils.hasText(jwt) && jwtProvider.validateToken(jwt) && jwtProvider.isAccessToken(jwt)) {

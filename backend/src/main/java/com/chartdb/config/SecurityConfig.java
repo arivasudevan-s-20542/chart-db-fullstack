@@ -3,6 +3,7 @@ package com.chartdb.config;
 import com.chartdb.security.CustomUserDetailsService;
 import com.chartdb.security.JwtAuthenticationEntryPoint;
 import com.chartdb.security.JwtAuthenticationFilter;
+import com.chartdb.security.McpApiTokenAuthFilter;
 import com.chartdb.security.oauth2.CustomOAuth2UserService;
 import com.chartdb.security.oauth2.OAuth2AuthenticationFailureHandler;
 import com.chartdb.security.oauth2.OAuth2AuthenticationSuccessHandler;
@@ -41,6 +42,7 @@ public class SecurityConfig {
     private final CustomUserDetailsService customUserDetailsService;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final McpApiTokenAuthFilter mcpApiTokenAuthFilter;
     private final OAuth2Config oAuth2Config;
     
     // Lazy load OAuth2 components - they're only needed when OAuth2 is enabled
@@ -66,10 +68,12 @@ public class SecurityConfig {
             CustomUserDetailsService customUserDetailsService,
             JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint,
             JwtAuthenticationFilter jwtAuthenticationFilter,
+            McpApiTokenAuthFilter mcpApiTokenAuthFilter,
             OAuth2Config oAuth2Config) {
         this.customUserDetailsService = customUserDetailsService;
         this.jwtAuthenticationEntryPoint = jwtAuthenticationEntryPoint;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.mcpApiTokenAuthFilter = mcpApiTokenAuthFilter;
         this.oAuth2Config = oAuth2Config;
     }
     
@@ -131,7 +135,10 @@ public class SecurityConfig {
         }
         
         http.authenticationProvider(authenticationProvider());
-        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        // MCP API token filter runs first — if token starts with "mcp_", it authenticates via API token
+        // Otherwise, falls through to JWT authentication
+        http.addFilterBefore(mcpApiTokenAuthFilter, UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAfter(jwtAuthenticationFilter, McpApiTokenAuthFilter.class);
         
         return http.build();
     }

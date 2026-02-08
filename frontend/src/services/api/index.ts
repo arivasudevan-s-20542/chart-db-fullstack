@@ -28,3 +28,8 @@ export {
     type AIConfig,
     type AIConfigResponse,
 } from './ai-config.api';
+export {
+    mcpTokenApi,
+    type McpApiToken,
+    type CreateMcpApiTokenRequest,
+} from './mcp-token.api';

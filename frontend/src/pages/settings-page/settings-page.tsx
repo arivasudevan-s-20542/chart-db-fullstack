@@ -35,6 +35,7 @@ import {
     ArrowLeft,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/alert/alert';
+import { McpApiTokensSection } from './mcp-api-tokens-section';
 
 export const SettingsPage: React.FC = () => {
     const { isAuthenticated, isLoading: authLoading } = useAuth();
@@ -428,6 +429,8 @@ export const SettingsPage: React.FC = () => {
                     </CardContent>
                 </Card>
             )}
+
+            <McpApiTokensSection />
         </div>
     );
 };
