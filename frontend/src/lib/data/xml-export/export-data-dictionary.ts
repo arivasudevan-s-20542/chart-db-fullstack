@@ -142,9 +142,9 @@ ${pkColumns}
 function generateForeignKeysXML(table: DBTable, diagram: Diagram): string {
     const { relationships = [] } = diagram;
 
-    // Find all relationships where this table is the source
+    // Find all relationships where this table is the target (child holding the FK column)
     const tableForeignKeys = relationships.filter(
-        (rel) => rel.sourceTableId === table.id
+        (rel) => rel.targetTableId === table.id
     );
 
     if (tableForeignKeys.length === 0) {
@@ -153,21 +153,21 @@ function generateForeignKeysXML(table: DBTable, diagram: Diagram): string {
 
     const foreignKeysXml = tableForeignKeys
         .map((rel) => {
-            const targetTable = diagram.tables?.find(
-                (t) => t.id === rel.targetTableId
+            const parentTable = diagram.tables?.find(
+                (t) => t.id === rel.sourceTableId
             );
-            if (!targetTable) return '';
+            if (!parentTable) return '';
 
-            const fkName = `fk_${table.name}_${targetTable.name}`;
-            const refTableName = targetTable.name;
+            const fkName = `fk_${table.name}_${parentTable.name}`;
+            const refTableName = parentTable.name;
 
             // Build FK columns mapping
             const fkColumns =
                 rel.sourceFieldId && rel.targetFieldId
                     ? `                <fk-columns>
                     <fk-column>
-                        <fk-local-column>${escapeXml(getFieldName(table, rel.sourceFieldId))}</fk-local-column>
-                        <fk-reference-column>${escapeXml(getFieldName(targetTable, rel.targetFieldId))}</fk-reference-column>
+                        <fk-local-column>${escapeXml(getFieldName(table, rel.targetFieldId))}</fk-local-column>
+                        <fk-reference-column>${escapeXml(getFieldName(parentTable, rel.sourceFieldId))}</fk-reference-column>
                     </fk-column>
                 </fk-columns>`
                     : '';
